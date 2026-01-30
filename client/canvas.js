@@ -1,7 +1,7 @@
 
 function clearCanvas(ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    console.log("Canvas cleared");
+    // console.log("Canvas cleared");
 }
 
 function ChessboardPattern(ctx, canvas) {
@@ -20,7 +20,7 @@ function ChessboardPattern(ctx, canvas) {
             ctx.fillRect(col * squareSize, row * squareSize, squareSize, squareSize);
         }
     }
-    console.log("Chessboard pattern drawn");
+    // console.log("Chessboard pattern drawn");
 }
 
 function renderSprite(ctx, x, y) {
@@ -29,24 +29,33 @@ function renderSprite(ctx, x, y) {
     // ben nearly went insane - fergus told me to put this in (image might not be loaded yet, so draw in onload)
     sprite.onload = () => {
         ctx.drawImage(sprite,x,y,100,100);
-        console.log("Sprite rendered");
+        // console.log("Sprite rendered");
     }
+}
+
+function renderText(ctx, color, font="30px Arial", text, x, y) {
+    ctx.font = font
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+    // console.log("Text rendered");
 }
 
 export function setCanvasSize(canvas) {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    console.log(`Canvas size set to ${canvas.width}x${canvas.height}`);
+    // console.log(`Canvas size set to ${canvas.width}x${canvas.height}`);
 }
 
-export function initializeCanvas() {
+export function initializeCanvas(canvas) {
+    const ctx = canvas.getContext("2d");
     setCanvasSize(canvas);
-    console.log("Canvas initialized");
+    // console.log("Canvas initialized");
 }
 
 export function updateCanvas(canvas, x, y) {
     const ctx = canvas.getContext("2d");
     ChessboardPattern(ctx, canvas);
     renderSprite(ctx, x, y);
-    console.log("Canvas updated");
+    renderText(ctx, "red","50px Arial","Welcome to our lil game, you can control the lil guy with lil WASD keys!", 100, 100);
+    // console.log("Canvas updated");
 }   
