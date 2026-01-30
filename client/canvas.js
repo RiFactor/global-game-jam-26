@@ -1,7 +1,8 @@
-// Used for storing all the sprites that we need to draw to the screen.
-export class SpriteDeck {
+// Used for storing all the assets that we need to include (sprites and audio).
+export class AssetDeck {
     constructor() {
         this.sprite_buffer = new Array();
+        this.audio_buffer = new Array();
     }
 
     // Preload an image. Example usage is
@@ -24,9 +25,32 @@ export class SpriteDeck {
         });
     }
 
-    get(index) {
+    // Preload an audio file. Same functionality as fetchImage above
+    fetchAudio(uri) {
+        return new Promise((resolve, err) => {
+            var audio = new Audio();
+            audio.src = uri;
+            // Setup a hook to store the audio in the buffer
+            audio.onload = () => {
+                console.log(`Asset fetched: ${uri}`);
+                this.audio_buffer.push(audio);
+                const index = this.audio_buffer.length;
+                resolve(index);
+            };
+            audio.onerror = err;
+        });
+    }
+
+    // Getter for sprites
+    getSprite(index) {
         return this.sprite_buffer[index];
     }
+
+    // Getter for audio
+    getAudio(index) {
+        return this.audio_buffer[index]
+    }
+
 }
 
 function clearCanvas(ctx) {

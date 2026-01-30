@@ -1,6 +1,6 @@
 "use strict";
 import {
-    SpriteDeck,
+    AssetDeck,
     initializeCanvas,
     setCanvasSize,
     drawBackground,
@@ -15,12 +15,12 @@ class State {
         this._main_canvas.ctx = canvas.getContext("2d");
         // Set the currently active canvas
         this.canvas = this._main_canvas;
-        this.sprites = new SpriteDeck();
+        this.assets = new AssetDeck();
     }
 
     // Entry point to start the game
     async start() {
-        const player_index = await this.sprites.fetchImage(
+        const player_index = await this.assets.fetchImage(
             "assets/player/front1.png",
         );
         setCanvasSize(this.canvas);
@@ -32,7 +32,7 @@ class State {
     draw() {
         drawBackground(this.canvas, this.x, this.y);
         this.canvas.ctx.drawImage(
-            this.sprites.get(0),
+            this.assets.getSprite(0),
             this.x,
             this.y,
             100,
