@@ -1,5 +1,5 @@
 // This is how you import in a really basic way
-import {hello} from './hello.js'
+import {initializeCanvas, setCanvasSize, updateCanvas} from './canvas.js'
 
 class State {
     constructor() {
@@ -12,24 +12,41 @@ window.onload = () => {
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
+    initializeCanvas(canvas);
     var state = new State();
-
-    ctx.fillStyle = "green";
-    ctx.fillRect(10, 10, 150, 100);
-
-    hello("world");
 
     document.addEventListener("keypress", (e) => {
         switch (e.key) {
             case 'w':
-                state.y += 1;
+                state.y -= 50;
+                break;
+            case 's':
+                state.y += 50;
                 break;
             case 'd':
-                self.y -= 1;
+                state.x += 50;
+                break;
+            case 'a':
+                state.x -= 50;
                 break;
             default:
                 console.log(e.key);
         }
     });
+    updateCanvas(canvas, state.x, state.y);
+
+    window.addEventListener('resize', () => {
+    console.log("Window resized");
+        canvas = document.getElementById("canvas");
+        setCanvasSize(canvas);
+        updateCanvas(canvas, 0, 0);
+    });
+
+    // dumb game loop for testing
+    setInterval(() => {
+        const canvas = document.getElementById("canvas");
+        updateCanvas(canvas, state.x, state.y);
+    }, 1000 / 30); // 30 FPS
+
 };
 
