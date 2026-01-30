@@ -12,3 +12,5 @@
 |                                                                                |
 +--------------------------------------------------------------------------------+
 ```
+Multiplayer Web broweser game, where the objective is to avoid being captured by the clan that wants your current mask.
+Stack: Javascript, Python
