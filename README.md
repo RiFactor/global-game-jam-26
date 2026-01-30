@@ -6,9 +6,9 @@
 |                                                         Global Game Jam 2026   |
 |                                                         Southampton            |
 |        we havent got a name yet.                        Theme of "Mask"        |
-|                                                         5 Devs                 |
+|        Recommmend one in the gh issue                   5 Devs                 |
 |                                                         48 Hours               |
-|                                                         ထ Quavers             |
+|                                                         0 sleep                |
 |                                                                                |
 +--------------------------------------------------------------------------------+
 ```
