@@ -2,7 +2,6 @@ const fs = require("fs");
 const http = require("http");
 const path = require("path");
 
-
 const PORT = 8000;
 
 const MIME_TYPES = {
@@ -17,32 +16,36 @@ const MIME_TYPES = {
   svg: "image/svg+xml",
 };
 
-const STATIC_PATH = path.join(process.cwd(), "./static");
+const STATIC_PATH = path.join(process.cwd(), "client");
 
 const toBool = [() => true, () => false];
 
-const prepareFile = async (url) => {
-  const paths = [STATIC_PATH, url];
-  if (url.endsWith("/")) paths.push("index.html");
-  const filePath = path.join(...paths);
-  const pathTraversal = !filePath.startsWith(STATIC_PATH);
-  const exists = await fs.promises.access(filePath).then(...toBool);
-  const found = !pathTraversal && exists;
-  const streamPath = found ? filePath : `${STATIC_PATH}/404.html`;
-  const ext = path.extname(streamPath).substring(1).toLowerCase();
-  const stream = fs.createReadStream(streamPath);
-  return { found, ext, stream };
-};
+// Translates a url path to a file name.
+function lookupPath(url_path) {
+  if (url_path == "/") return "index.html";
+  return url_path;
+}
 
-http
-  .createServer(async (req, res) => {
-    const file = await prepareFile(req.url);
-    const statusCode = file.found ? 200 : 404;
-    const mimeType = MIME_TYPES[file.ext] || MIME_TYPES.default;
-    res.writeHead(statusCode, { "Content-Type": mimeType });
-    file.stream.pipe(res);
-    console.log(`${req.method} ${req.url} ${statusCode}`);
-  })
-  .listen(PORT);
+async function requestHandler(req, res) {
+  const file_path = path.join(STATIC_PATH, lookupPath(req.url));
+  console.log(file_path);
+  const file_exists = await fs.promises.access(file_path).then(...toBool);
 
+  var status_code = 200;
+  if (file_exists) {
+    const ext = path.extname(file_path).substring(1).toLowerCase();
+    const stream = fs.createReadStream(file_path);
+    const mimeType = MIME_TYPES[ext] || MIME_TYPES.default;
+    res.writeHead(status_code, { "Content-Type": mimeType });
+    stream.pipe(res);
+  } else {
+    status_code = 404;
+    res.writeHead(status_code);
+    res.end("Not found\n");
+  }
+
+  console.log(`${req.method} ${req.url} ${status_code}`);
+}
+
+http.createServer(requestHandler).listen(PORT);
 console.log(`Server running at http://127.0.0.1:${PORT}/`);
