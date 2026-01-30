@@ -16,19 +16,33 @@ window.onload = () => {
     var state = new State();
 
     document.addEventListener("keypress", (e) => {
+        const stepSize = 50; // how much the player moves per keypress
         switch (e.key) {
             case 'w':
-                state.y -= 50;
-                break;
-            case 's':
-                state.y += 50;
-                break;
-            case 'd':
-                state.x += 50;
+                if (state.y <= 0) { 
+                    break
+                }
+                state.y -= stepSize;
                 break;
             case 'a':
-                state.x -= 50;
+                if (state.x <= 0) {
+                    break;
+                }
+                state.x -= stepSize;
                 break;
+            case 's':
+                if (state.y >= window.innerHeight - 100) {
+                    break;
+                }
+                state.y += stepSize;
+                break;
+            case 'd':
+                if (state.x >= window.innerWidth - 100) {
+                    break;
+                }
+                state.x += stepSize;
+                break;
+
             default:
                 console.log(e.key);
         }
@@ -36,7 +50,7 @@ window.onload = () => {
     updateCanvas(canvas, state.x, state.y);
 
     window.addEventListener('resize', () => {
-    console.log("Window resized");
+        console.log("Window resized");
         canvas = document.getElementById("canvas");
         setCanvasSize(canvas);
         updateCanvas(canvas, 0, 0);
@@ -47,6 +61,5 @@ window.onload = () => {
         const canvas = document.getElementById("canvas");
         updateCanvas(canvas, state.x, state.y);
     }, 1000 / 30); // 30 FPS
-
 };
 
