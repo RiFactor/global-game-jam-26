@@ -1,6 +1,4 @@
-const SLOW = 0.05;
-const MEDIUM = 0.08;
-const FAST = 0.12;
+import * as config from "./config.js";
 
 class Character {
     // Accepts an array of sprite frames, which it uses to draw itself. These
@@ -8,8 +6,8 @@ class Character {
     constructor(sprite_frames) {
         this.x = 10;
         this.y = 10;
-        this.vx = SLOW;
-        this.vy = SLOW;
+        this.vx = config.SLOW;
+        this.vy = config.SLOW;
         this.width = 100;
         this.height = 100;
         this.sprite_frames = sprite_frames;

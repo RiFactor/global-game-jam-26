@@ -6,12 +6,15 @@ import {
     drawBackground,
 } from "./canvas.js";
 
+import * as config from "./config.js";
 import { Character } from "./character.js";
 
 class State {
     constructor(canvas) {
         this.x = 10;
         this.y = 10;
+        this.vx = 0;
+        this.vy = 0;
         this.orientation = 0;
         // Save the passed canvas
         this._main_canvas = canvas;
@@ -58,22 +61,27 @@ class State {
     }
 
     // This triggers as a callback.
-    onKey(e) {
+    onKey(e, active) {
+        var new_velocity = 0;
+        if (active) {
+            new_velocity = config.FAST;
+        }
+
         switch (e.key) {
             case "d":
-                this.x += 10;
+                this.vx = new_velocity;
                 this.orientation = 3;
                 break;
             case "a":
-                this.x -= 10;
+                this.vx = -new_velocity;
                 this.orientation = 2;
                 break;
             case "w":
-                this.y -= 10;
+                this.vy = -new_velocity;
                 this.orientation = 1;
                 break;
             case "s":
-                this.y += 10;
+                this.vy = new_velocity;
                 this.orientation = 0;
                 break;
             default:
@@ -92,6 +100,9 @@ class State {
         this.characters.forEach((c) => {
             c.update(dt);
         });
+
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
     }
 }
 
