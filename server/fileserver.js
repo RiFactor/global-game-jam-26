@@ -1,7 +1,29 @@
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
+const createServer = require("http");
+const WebSocketServer = require("ws");
 
+const server = createServer();
+const wss = new WebSocketServer({noServer: true});
+
+
+wss.on('connection', function connection(ws) {
+    ws.on('error', console.error)
+})
+
+server.on('upgrade', function upgrade(request, socket, head){
+    const {pathname} = new URL(request.url, 'wss://base.url');
+    if (pathname === 'foo') {
+        wss.handleUpgrade(request, socket, head, function done(ws) {
+            wss.emit('connection', ws, request);
+        })
+    } else {
+        socket.destroy();
+    }
+})
+
+server.listen(8080);
 
 const PORT = 8000;
 
