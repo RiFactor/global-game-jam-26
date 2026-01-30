@@ -13,6 +13,7 @@ class Character {
         this.width = 100;
         this.height = 100;
         this.sprite_frames = sprite_frames;
+        this.orientation = 0; // 0=front, 1=back, 2=left, 3=right
     }
 
     // Draw the sprite.

@@ -12,6 +12,7 @@ class State {
     constructor(canvas) {
         this.x = 10;
         this.y = 10;
+        this.orientation = 0;
         // Save the passed canvas
         this._main_canvas = canvas;
         this._main_canvas.ctx = canvas.getContext("2d");
@@ -48,7 +49,7 @@ class State {
         });
 
         this.canvas.ctx.drawImage(
-            this.assets.getSprite(0),
+            this.assets.getSprite(this.orientation),
             this.x,
             this.y,
             100,
@@ -61,15 +62,19 @@ class State {
         switch (e.key) {
             case "d":
                 this.x += 10;
+                this.orientation = 3;
                 break;
             case "a":
                 this.x -= 10;
+                this.orientation = 2;
                 break;
             case "w":
                 this.y -= 10;
+                this.orientation = 1;
                 break;
             case "s":
                 this.y += 10;
+                this.orientation = 0;
                 break;
             default:
                 console.log(e.key);
