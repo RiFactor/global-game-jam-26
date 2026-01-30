@@ -2,5 +2,5 @@
 Theme: Mask
 
 <a>
-   <img src="./client/assets/player/front1.png" width="825" />
+   <img src="./blob/client/assets/player/front1.png" width="825" />
 </a>
