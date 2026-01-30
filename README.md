@@ -30,4 +30,4 @@ or build it yourself.
 git clone git@github.com:RiFactor/global-game-jam-26.git
 make
 ```
-then navigate [localhost:8000](localhost:8000) in your browser.
+then navigate to [localhost:8000](https://localhost:8000) in your browser.
