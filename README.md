@@ -12,5 +12,5 @@
 |                                                                                |
 +--------------------------------------------------------------------------------+
 ```
-- Multiplayer Web broweser game, where the objective is to avoid being captured by the clan that wants your current mask.
+- Multiplayer Last man standing PvE Web broweser game, where the objective is to avoid being captured by the clan that wants your current mask. You can either aid or sabotage your fellow players. 
 - Stack: Javascript, Python
