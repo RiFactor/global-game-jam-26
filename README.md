@@ -21,7 +21,7 @@ or build it yourself.
 
 
 ### Requirements
-- node
+- [node](https://nodejs.org/en)
 - [make](https://www.gnu.org/software/make/)
 
 ### Setup
