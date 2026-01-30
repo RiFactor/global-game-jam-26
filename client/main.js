@@ -1,62 +1,36 @@
 // This is how you import in a really basic way
-import {initializeCanvas, setCanvasSize, updateCanvas} from './canvas.js'
-
-class State {
-    constructor() {
-        this.x = 0;
-        this.y = 0;
-    }
-};
+import { State } from "./state.js";
 
 window.onload = () => {
     const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+    var state = new State(canvas);
 
-    initializeCanvas(canvas);
-    var state = new State();
-
+    // Hook up the key event listener
     document.addEventListener("keypress", (e) => {
-
-        const stepSize = 50; // how much the player moves per keypress
-        // sprite is 100x100, so prevent moving offscreen
-        
-        switch (e.key) {
-            case 'w':
-                if (state.y <= 0) { 
-                    break
-                }
-                state.y -= stepSize;
-                break;
-            case 'a':
-                if (state.x <= 0) {
-                    break;
-                }
-                state.x -= stepSize;
-                break;
-            case 's':
-                if (state.y >= window.innerHeight - 150) {
-                    break;
-                }
-                state.y += stepSize;
-                break;
-            case 'd':
-                if (state.x >= window.innerWidth - 150) {
-                    break;
-                }
-                state.x += stepSize;
-                break;
-
-            default:
-                console.log(e.key);
-        }
+        state.onKey(e);
     });
-    updateCanvas(canvas, state.x, state.y);
+    // Register a means for resizing the canvas
+    window.addEventListener("resize", () => {
+        state.onResize();
+    });
 
+    function drawCallback() {
+        state.draw();
+        requestAnimationFrame(drawCallback);
+    }
 
-    // dumb game loop for testing
-    setInterval(() => {
-        const canvas = document.getElementById("canvas");
-        setCanvasSize(canvas);
-        updateCanvas(canvas, state.x, state.y);
-    }, 1000 / 30); // 30 FPS
+    // This is an async function so it will start whenever it feels ready
+    state.start().then(() => {
+        console.log("Starting draw loop");
+        // Call update every 30 times a second and pass the time elapsed since
+        var last_time = Date.now();
+        setInterval(() => {
+            const now = Date.now();
+            const dt = now - last_time;
+            state.update(dt);
+            last_time = now;
+        }, 1000 / 30);
+        // Kick off the animation loop
+        requestAnimationFrame(drawCallback);
+    });
 };
