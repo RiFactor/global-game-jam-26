@@ -1,21 +1,10 @@
-export function setCanvasSize(canvas) {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    console.log(`Canvas size set to ${canvas.width}x${canvas.height}`);
-}
 
-
-export function clearCanvas(ctx) {
+function clearCanvas(ctx) { // to implement properly
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   console.log("Canvas cleared");
 }
 
-export function initializeCanvas() {
-    setCanvasSize(canvas);
-    console.log("Canvas initialized");
-}
-
-export function ChessboardPattern(ctx, canvas) {
+function ChessboardPattern(ctx, canvas) {
   const squareSize = 50;
   const rows = Math.ceil(canvas.height / squareSize);
   const cols = Math.ceil(canvas.width / squareSize);
@@ -34,10 +23,9 @@ export function ChessboardPattern(ctx, canvas) {
     console.log("Chessboard pattern drawn");
 }
 
-export function renderSprite(ctx, x, y) {
+function renderSprite(ctx, x, y) {
     var sprite = new Image();
     sprite.src = "./assets/player/lilguy.png"; 
-
     // ben nearly went insane - fergus told me to put this in
     // image might not be loaded yet, so draw in onload
     sprite.onload = () => {
@@ -46,11 +34,20 @@ export function renderSprite(ctx, x, y) {
     }
 }
 
+export function setCanvasSize(canvas) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    console.log(`Canvas size set to ${canvas.width}x${canvas.height}`);
+}
+
+export function initializeCanvas() {
+    setCanvasSize(canvas);
+    console.log("Canvas initialized");
+}
+
 export function updateCanvas(canvas, x, y) {
     const ctx = canvas.getContext("2d");
-    // clearCanvas(ctx); // to be done properly lol
     ChessboardPattern(ctx, canvas);
     renderSprite(ctx, x, y);
     console.log("Canvas updated");
 }   
-
