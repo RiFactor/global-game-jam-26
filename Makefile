@@ -1,7 +1,7 @@
 
 .PHONY: dev-server
 dev-server:
-	python3 -m http.server -b localhost -d client
+	node server/fileserver.js
 
 format:
 	prettier --tab-width=4 -w client
