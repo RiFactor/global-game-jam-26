@@ -6,6 +6,8 @@ import {
     drawBackground,
 } from "./canvas.js";
 
+import { Character } from "./character.js";
+
 class State {
     constructor(canvas) {
         this.x = 10;
@@ -16,13 +18,22 @@ class State {
         // Set the currently active canvas
         this.canvas = this._main_canvas;
         this.assets = new AssetDeck();
+
+        // This is just example code for now.
+        this.characters = new Array();
     }
 
     // Entry point to start the game
     async start() {
-        const player_index = await this.assets.fetchImage(
-            "assets/player/front1.png",
+        const front = this.assets.fetchImage("assets/player/front1.png");
+        const back = this.assets.fetchImage("assets/player/back1.png");
+        const left = this.assets.fetchImage("assets/player/left1.png");
+        const right = this.assets.fetchImage("assets/player/right1.png");
+
+        this.characters.push(
+            new Character([await front, await back, await left, await right]),
         );
+
         setCanvasSize(this.canvas);
         console.log("Game ready");
     }
@@ -31,6 +42,11 @@ class State {
     // `requestAnimationFrame`.
     draw() {
         drawBackground(this.canvas, this.x, this.y);
+
+        this.characters.forEach((c) => {
+            c.draw(this.canvas, this.assets);
+        });
+
         this.canvas.ctx.drawImage(
             this.assets.getSprite(0),
             this.x,
@@ -66,8 +82,11 @@ class State {
         updateCanvas(this.canvas, 0, 0);
     }
 
-    update() {
+    update(dt) {
         // game logic goes here
+        this.characters.forEach((c) => {
+            c.update(dt);
+        });
     }
 }
 

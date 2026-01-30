@@ -48,9 +48,8 @@ export class AssetDeck {
 
     // Getter for audio
     getAudio(index) {
-        return this.audio_buffer[index]
+        return this.audio_buffer[index];
     }
-
 }
 
 function clearCanvas(ctx) {
