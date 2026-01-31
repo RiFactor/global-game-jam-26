@@ -4,23 +4,22 @@ class Connection {
     constructor(uri) {
         this.wsUri = uri;
         this.websocket = new WebSocket(this.wsUri);
-        
-        // Listen fo errors and log (for now)
+
+        // Listen for errors and log (for now)
         this.websocket.addEventListener("error", (e) => {
             console.log(`ERROR: ${e}`)
         })
-        
-        this.websocket.addEventListener("message", (e) => {
-            console.log(`RECEIVED: ${e.data}: ${counter}`);
-            counter++;
-        });
+
+        // this.websocket.addEventListener("message", (e) => {
+        //     console.log(`RECEIVED: ${e.data}: ${this.counter}`);
+        //     this.counter++;
+        // });
 
         // TODO: Get the connection ID from the server (somehow)
         this.connection_id = 0
-
     }
 
-    // Keep pinging the server
+     // Keep pinging the server
     ping() {
         this.websocket.addEventListener("open", () => {
             console.log("CONNECTED");

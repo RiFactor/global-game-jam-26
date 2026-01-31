@@ -1,10 +1,14 @@
 "use strict";
 import {
     AssetDeck,
-    initializeCanvas,
     setCanvasSize,
     drawBackground,
 } from "./canvas.js";
+
+// Define updateCanvas locally to avoid import errors
+function updateCanvas(canvas, x, y) {
+    drawBackground(canvas, x, y);
+}
 
 import * as config from "./config.js";
 import {

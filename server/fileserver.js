@@ -58,12 +58,14 @@ wss.on("connection", function connection(ws) {
     console.log("Websocket connected");
     ws.on("error", console.error);
 
+    ws.on("message", function message(data) {
+        console.log("received: %s", data);
+    });
+
     ws.send("Welcome, traveler.");
 });
 
-wss.on("message", function message(data) {
-    console.log("received: %s", data);
-});
+
 
 server.listen(PORT);
 
