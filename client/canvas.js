@@ -50,17 +50,17 @@ export class AssetDeck {
             image.onload = () => {
                 console.log(`Asset fetched: ${uri}`);
                 var subcanvas = new OffscreenCanvas(image.width, image.height);
-                var drawContext = subcanvas.getContext("2d")
-                drawContext.drawImage(image, 0, 0);
-                drawContext.fillStyle = this.getOrCreateTint(tint_key);
-                drawContext.globalCompositeOperation = 'multiply';
-                drawContext.fillRect(0, 0, image.width, image.height);
-                var tintedBitmap = subcanvas.transferToImageBitmap();
-                drawContext.clearRect(0, 0, image.width, image.height);
-                drawContext.globalCompositeOperation = 'source-over';
-                drawContext.drawImage(image, 0, 0);
-                drawContext.globalCompositeOperation = 'source-in';
-                drawContext.drawImage(tintedBitmap, 0, 0);
+                var draw_context = subcanvas.getContext("2d")
+                draw_context.drawImage(image, 0, 0);
+                draw_context.fillStyle = this.getOrCreateTint(tint_key);
+                draw_context.globalCompositeOperation = 'multiply';
+                draw_context.fillRect(0, 0, image.width, image.height);
+                var tinted_bitmap = subcanvas.transferToImageBitmap();
+                draw_context.clearRect(0, 0, image.width, image.height);
+                draw_context.globalCompositeOperation = 'source-over';
+                draw_context.drawImage(image, 0, 0);
+                draw_context.globalCompositeOperation = 'source-in';
+                draw_context.drawImage(tinted_bitmap, 0, 0);
                 this.sprite_buffer.push(subcanvas.transferToImageBitmap());
                 const index = this.sprite_buffer.length - 1;
                 resolve(index);
