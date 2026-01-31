@@ -12,9 +12,23 @@
 |                                                                                |
 +--------------------------------------------------------------------------------+
 ```
-
-
+<table>
+<tr>
+<td>
+  
+<a href="https://shellywell123.github.io/Grind-Boy.gb/build/web/index.html"> <!-- TODO update with actual game link -->
+  <img src="https://github.com/Shellywell123/Grind-Boy.gb/blob/GB-Studio-3.1/assets/screenshots/DemoV1.1.gif" width="175" /> <!-- TODO update with actual gameplay gif -->
+</a>
+  
+</pre>
+</td>
+<td>
+  
 Last man standing PvE multiplayer Web browser game, where the objective is to avoid being captured. You will be swarmed by a particular clan of emenies depending on your current mask. You can either aid or sabotage your fellow players as you switch masks to evade catpure. 
+  
+</td>
+</tr>
+</table>
 
 ---
 
