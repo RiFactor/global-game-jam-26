@@ -133,21 +133,20 @@ function renderHUDMask(ctx, player, asset_bank, x, y) {
         player.mask_frames[0][1], // TODO: first index need to become dymanic once we have mask -player tracking
     );
     var size = 30;
-    ctx.drawImage(maskImage, x, y-(size/2), size, size);
-};
+    ctx.drawImage(maskImage, x, y - size / 2, size, size);
+}
 
 function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
-
     renderHUDMask(ctx, player, asset_bank, x, y);
     renderText(
-                canvas.ctx,
-                "black",
-                "20px Arial",
-                "player: " + player.player_id,
-                x+40,
-                y,
-                bold,
-            );
+        canvas.ctx,
+        "black",
+        "20px Arial",
+        "player: " + player.player_id,
+        x + 40,
+        y,
+        bold,
+    );
 }
 
 function renderText(ctx, color, font = "30px Arial", text, x, y, bold) {
@@ -167,7 +166,6 @@ export function onResize(canvas) {
 function drawBackground(viewport, asset_bank, rows, cols) {
     viewport.draw(
         (canvas, x, y) => {
-
             ChessboardPattern(canvas.ctx, canvas, asset_bank, rows, cols, x, y);
             addGithubLink(canvas);
         },
@@ -180,32 +178,33 @@ function drawBackground(viewport, asset_bank, rows, cols) {
 function drawForeground(viewport, asset_bank, player, other_players) {
     viewport.draw(
         (canvas) => {
-
             // important info
             // players are never deleted so the length of other_players will never decrease
             // when a player leaves/ disconnects, they re enter a new player
             // to tell is a player is active, they have a draw state of 1, deactive is 0
 
             const activeplayers = other_players.filter((p) => p.active == true);
-            
+
             var leftPadding = 5;
             var topPadding = 25;
 
             renderPlayerStats(
                 canvas.ctx,
-                player, 
-                leftPadding, 
+                player,
+                leftPadding,
                 topPadding,
                 true,
-                asset_bank
+                asset_bank,
             );
 
             for (let i = 0; i < activeplayers.length; i++) {
                 renderPlayerStats(
                     canvas.ctx,
-                    activeplayers[i], leftPadding, topPadding + (i + 1) * topPadding,
+                    activeplayers[i],
+                    leftPadding,
+                    topPadding + (i + 1) * topPadding,
                     false,
-                    asset_bank
+                    asset_bank,
                 );
             }
         },
@@ -272,10 +271,10 @@ export class GameMap {
 
 export class HUD {
     constructor() {}
-    
+
     draw(dt, viewport, asset_deck, player, other_players) {
         drawForeground(viewport, asset_deck, player, other_players);
-    }   
+    }
 }
 
 export class ViewPort {

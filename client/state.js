@@ -1,5 +1,5 @@
 "use strict";
-import { AssetDeck, onResize, GameMap, ViewPort, HUD} from "./canvas.js";
+import { AssetDeck, onResize, GameMap, ViewPort, HUD } from "./canvas.js";
 
 import * as config from "./config.js";
 import {
@@ -157,7 +157,7 @@ class State {
             this.player.vy,
         );
         this.game_map.draw(dt, this.viewport, this.assets);
-        
+
         this.player.draw(dt, this.viewport, this.assets);
         this.other_players.forEach((c) => {
             if (c.active) {
@@ -167,7 +167,13 @@ class State {
         this.characters.forEach((c) => {
             c.draw(dt, this.viewport, this.assets);
         });
-        this.hud.draw(dt, this.viewport, this.assets, this.player, this.other_players);
+        this.hud.draw(
+            dt,
+            this.viewport,
+            this.assets,
+            this.player,
+            this.other_players,
+        );
     }
 
     // This triggers as a callback.

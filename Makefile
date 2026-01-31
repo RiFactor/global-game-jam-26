@@ -6,6 +6,9 @@ dev-server:
 format:
 	prettier --tab-width=4 -w client server
 
+format-ben:
+    npx prettier --tab-width=4 -w client server
+
 docker:
 	docker run -it \
 		-v .:/home/node/app \
