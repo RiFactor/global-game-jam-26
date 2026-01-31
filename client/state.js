@@ -35,6 +35,10 @@ class State {
 
         // Associate the connection to the server
         this.conn = connection;
+        this.conn.websocket.addEventListener("message", function message(e) {
+            const message = JSON.parse(e.data);
+            console.log(`RECEIVED: ${e.data}`);
+        });
 
         // To fix all the movement problems, store the key states and then work
         // out the movement vectors during update.
