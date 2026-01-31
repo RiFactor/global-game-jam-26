@@ -7,7 +7,7 @@ import {
 } from "./canvas.js";
 
 import * as config from "./config.js";
-import { Character } from "./character.js";
+import { Character, Facing, loadPlayerSprites } from "./character.js";
 
 class State {
     constructor(canvas) {
@@ -25,18 +25,16 @@ class State {
 
         // This is just example code for now.
         this.characters = new Array();
+        // The player controlled character
+        this.player = null;
     }
 
     // Entry point to start the game
     async start() {
-        const front = this.assets.fetchImage("assets/player/front1.png");
-        const back = this.assets.fetchImage("assets/player/back1.png");
-        const left = this.assets.fetchImage("assets/player/left1.png");
-        const right = this.assets.fetchImage("assets/player/right1.png");
+        const player_sprites = await loadPlayerSprites(this.assets);
 
-        this.characters.push(
-            new Character([await front, await back, await left, await right]),
-        );
+        this.characters.push(new Character(player_sprites));
+        this.player = new Character(player_sprites);
 
         setCanvasSize(this.canvas);
         console.log("Game ready");
@@ -44,45 +42,38 @@ class State {
 
     // Drawing function. This is automatically called by
     // `requestAnimationFrame`.
-    draw() {
+    draw(dt) {
         drawBackground(this.canvas, this.x, this.y);
 
-        this.characters.forEach((c) => {
-            c.draw(this.canvas, this.assets);
-        });
+        this.player.draw(dt, this.canvas, this.assets);
 
-        this.canvas.ctx.drawImage(
-            this.assets.getSprite(this.orientation),
-            this.x,
-            this.y,
-            100,
-            100,
-        );
+        this.characters.forEach((c) => {
+            c.draw(dt, this.canvas, this.assets);
+        });
     }
 
     // This triggers as a callback.
     onKey(e, active) {
-        var new_velocity = 0;
-        if (active) {
-            new_velocity = config.FAST;
-        }
+        const updateMovement = (facing) => {
+            if (active) {
+                this.player.startMove(facing);
+            } else {
+                this.player.stopMove(facing);
+            }
+        };
 
         switch (e.key) {
             case "d":
-                this.vx = new_velocity;
-                this.orientation = 3;
+                updateMovement(Facing.RIGHT);
                 break;
             case "a":
-                this.vx = -new_velocity;
-                this.orientation = 2;
+                updateMovement(Facing.LEFT);
                 break;
             case "w":
-                this.vy = -new_velocity;
-                this.orientation = 1;
+                updateMovement(Facing.UP);
                 break;
             case "s":
-                this.vy = new_velocity;
-                this.orientation = 0;
+                updateMovement(Facing.DOWN);
                 break;
             default:
                 console.log(e.key);
@@ -100,9 +91,7 @@ class State {
         this.characters.forEach((c) => {
             c.update(dt);
         });
-
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
+        this.player.update(dt);
     }
 }
 
