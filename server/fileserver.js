@@ -4,6 +4,7 @@ const path = require("path");
 const ws = require("ws");
 
 const config = require("../client/config.js");
+const utils = require("../client/utils.js");
 
 const PORT = 8000;
 
@@ -76,6 +77,7 @@ class NonPlayerCharacter {
         this.target = undefined;
         // Search radius in game units
         this.search_radius = 1000;
+        this.speed = 0.165;
     }
 
     // Look for a target player in range
@@ -118,7 +120,7 @@ class NonPlayerCharacter {
 
     // Set new vx, vy based on relative direction of player.
     // speed is slightly faster than players default move
-    updateVelocity(target, speed = 0.165) {
+    updateVelocity(target) {
         const dy = target.state.y - this.state.y;
         const dx = target.state.x - this.state.x;
 
@@ -128,7 +130,8 @@ class NonPlayerCharacter {
             dy = Math.random() - 0.5;
         }
 
-        const speed_fact = speed / Math.sqrt(Math.pow(dy, 2) + Math.pow(dx, 2));
+        const speed_fact =
+            this.speed / Math.sqrt(Math.pow(dy, 2) + Math.pow(dx, 2));
 
         this.state.vx = dx * speed_fact;
         this.state.vy = dy * speed_fact;
@@ -208,16 +211,24 @@ class ServerState {
         this.npcs = new Array();
         this.server = server;
         this.websocket_server = websocket_server;
+
+        this.map_width_tiles = 0;
+        this.map_height_tiles = 0;
     }
 
-    newNPC({ x = 400, y = 300 } = {}) {
+    newNPC() {
         var npc = new NonPlayerCharacter();
         npc.state.vx = (Math.random() - 0.5) * 0.1;
         npc.state.vy = (Math.random() - 0.5) * 0.1;
+        npc.speed *= gaussianRandom(1.0, 0.1);
 
         // HACK: adding some slight randomness to npc start position to avoid div by 0 issues later
-        npc.state.x = (Math.random() - 0.5) * 0.1;
-        npc.state.y = (Math.random() - 0.5) * 0.1;
+        npc.state.x =
+            Math.random() * (this.map_width_tiles - 1) * config.TILE_SIZE +
+            config.TILE_SIZE;
+        npc.state.y =
+            Math.random() * (this.map_height_tiles - 1) * config.TILE_SIZE +
+            config.TILE_SIZE;
         this.npcs.push(npc);
     }
 
@@ -254,6 +265,15 @@ class ServerState {
         socket.send(JSON.stringify({ player_id: player_id }));
     }
 
+    loadMap(filename) {
+        const text = fs.readFileSync(filename, "ascii");
+        this.map_matrix = utils.textToMatrix(text);
+        this.map_height_tiles = this.map_matrix.length;
+        if (this.map_height_tiles > 0) {
+            this.map_width_tiles = this.map_matrix[0].length;
+        }
+    }
+
     updateNPCs(dt) {
         this.npcs.forEach((c) => {
             c.onstepUpdates(this.players);
@@ -282,7 +302,10 @@ class ServerState {
         this.server.listen(port);
         console.log(`Server running at http://127.0.0.1:${PORT}/`);
 
-        this.newNPC();
+        // populate some number of NPCs at the begnning
+        for (let i = 0; i < 48; i += 1) {
+            this.newNPC();
+        }
 
         var previous_time = Date.now();
         setInterval(async () => {
@@ -300,4 +323,5 @@ class ServerState {
 
 const server = http.createServer(requestHandler);
 const state = new ServerState(server, new ws.WebSocketServer({ server }));
+state.loadMap("client/assets/maps/asscii-map1.txt");
 state.bind(PORT);

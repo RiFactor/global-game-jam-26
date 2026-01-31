@@ -376,7 +376,7 @@ export class ViewPort {
 
         // How large zone should be where the camera starts to
         // follow the player.
-        this.move_zone = 20;
+        this.move_zone = config.VIEWPORT_BUFFER;
         this.canvas = canvas;
     }
 

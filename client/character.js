@@ -97,8 +97,8 @@ class Character {
         this.vx = 0;
         this.vy = 0;
         this.speed = config.MEDIUM;
-        this.width = 96;
-        this.height = 96;
+        this.width = config.SCALE;
+        this.height = config.SCALE;
         this.sprite_frames = sprite_frames;
         this.mask = 0;
         this.mask_frames = mask_frames;
