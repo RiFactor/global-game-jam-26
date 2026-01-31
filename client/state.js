@@ -69,7 +69,6 @@ class State {
         // Start listening for updates
         this.conn.websocket.addEventListener("message", (e) => {
             const message = JSON.parse(e.data);
-            console.log(`RECEIVED: ${e.data}`);
 
             // Update positions of characters on receipt of message
             let n_char = this.characters.length;
