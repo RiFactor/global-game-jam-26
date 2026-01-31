@@ -29,7 +29,7 @@ async function loadPlayerSprites(
     const fetchFacing = (facing) => {
         return frame_indices.map(async (i) => {
             return asset_deck.fetchImage(
-                `assets/player/${facing}${i}.png`,
+                `assets/${character}/${facing}${i}.png`,
                 tint_key,
             );
         });
@@ -56,7 +56,7 @@ async function loadAllMaskSprites(
     const fetchMask = (name) => {
         return orientations.map(async (i) => {
             return asset_deck.fetchImage(
-                `assets/player/masks/${name}/${i}.png`,
+                `assets/${character}/masks/${name}/${i}.png`,
                 tint_key,
             );
         });
@@ -68,7 +68,7 @@ async function loadAllMaskSprites(
     // await all of them together
     const all_masks = await Promise.all(all_promises);
     const back = await asset_deck.fetchImage(
-        `assets/player/masks/back.png`,
+        `assets/${character}/masks/back.png`,
         tint_key,
     );
 

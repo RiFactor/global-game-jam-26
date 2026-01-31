@@ -1,9 +1,14 @@
 // This is how you import in a really basic way
+import { Connection } from "./client.js";
+import { URI } from "./config.js";
 import { State } from "./state.js";
 
 window.onload = () => {
+    // Set up coonection to server
+    const connection = new Connection(URI)
+
     const canvas = document.getElementById("canvas");
-    var state = new State(canvas);
+    var state = new State(canvas, connection);
 
     // Hook up the key event listener
     document.addEventListener("keyup", (e) => {
