@@ -78,15 +78,6 @@ function ChessboardPattern(ctx, canvas) {
     }
 }
 
-function renderSprite(ctx, x, y) {
-    var sprite = new Image();
-    sprite.src = "./assets/player/lilguy.png";
-    // ben nearly went insane - fergus told me to put this in (image might not be loaded yet, so draw in onload)
-    sprite.onload = () => {
-        ctx.drawImage(sprite, x, y, 100, 100);
-    };
-}
-
 function renderText(ctx, color, font = "30px Arial", text, x, y) {
     ctx.font = font;
     ctx.fillStyle = color;
