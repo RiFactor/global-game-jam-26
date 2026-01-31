@@ -85,6 +85,11 @@ class State {
             default:
                 console.log(e.key);
         }
+
+        const socket = new WebSocket('ws://localhost:8000/ws');
+        socket.addEventListener('open', () => {
+            socket.send(`ben-test Key ${e.key} is now ${active}`);
+        });
     }
 
     // Called whenever the window is resized.
