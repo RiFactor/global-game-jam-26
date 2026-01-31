@@ -84,11 +84,10 @@ class NonPlayerCharacter {
         // Iterate over players until an ACTIVE is found one in range, set them as target
         var dists = new Array();
         for (var p of players) {
-            // skip if wrong mask (ignore for now)
-            // TODO: uncomment
-            // if (p.state.mask != this.state.mask) {
-            //     continue
-            // };
+            // skip if wrong mask
+            if (p.state.mask != this.state.mask) {
+                continue
+            };
 
             var dist = Math.pow(
                 Math.pow(p.state.x - this.state.x, 2) +
