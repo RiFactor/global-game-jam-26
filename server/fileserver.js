@@ -1,29 +1,7 @@
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
-const createServer = require("http");
 const WebSocketServer = require("ws");
-
-const server = createServer(); // error: not a function...
-const wss = new WebSocketServer({noServer: true});
-
-
-wss.on('connection', function connection(ws) {
-    ws.on('error', console.error)
-})
-
-server.on('upgrade', function upgrade(request, socket, head){
-    const {pathname} = new URL(request.url, 'wss://base.url');
-    if (pathname === 'foo') {
-        wss.handleUpgrade(request, socket, head, function done(ws) {
-            wss.emit('connection', ws, request);
-        })
-    } else {
-        socket.destroy();
-    }
-})
-
-server.listen(8080);
 
 const PORT = 8000;
 
@@ -70,5 +48,26 @@ async function requestHandler(req, res) {
   console.log(`${req.method} ${req.url} ${status_code}`);
 }
 
-http.createServer(requestHandler).listen(PORT);
+const server = http.createServer(requestHandler);
+
+const wss = new WebSocketServer({server});
+
+wss.on('connection', function connection(ws) {
+    ws.on('error', console.error)
+})
+
+server.on('upgrade', function upgrade(request, socket, head){
+    const {pathname} = new URL(request.url, `ws://127.0.0.1:${PORT}/`);
+    if (pathname === 'foo') {
+        wss.handleUpgrade(request, socket, head, function done(ws) {
+            wss.emit('connection', ws, request);
+        })
+    } else {
+        socket.destroy();
+    }
+})
+
+server.listen(PORT);
+
 console.log(`Server running at http://127.0.0.1:${PORT}/`);
+
