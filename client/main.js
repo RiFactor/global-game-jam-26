@@ -18,9 +18,9 @@ window.onload = () => {
     const canvas = document.getElementById("canvas");
     var state = new State(canvas, connection);
 
-if (isMobile()) {
-    addDpadToScreen(state);
-}
+    if (isMobile()) {
+        addDpadToScreen(state);
+    }
 
     // Hook up the key event listener
     document.addEventListener("keyup", (e) => {
