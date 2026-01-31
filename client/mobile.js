@@ -41,6 +41,7 @@ export function addDpadToScreen(state) {
     up.style.background = "#272929";
     up.style.color = "#fff";
     up.style.borderRadius = "10%";
+    up.style.userSelect = "none";
     up.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "w" }, true); };
     up.onpointerup = () => state.onKey({ key: "w" }, false);
     up.onpointercancel = () => state.onKey({ key: "w" }, false);
@@ -58,7 +59,8 @@ export function addDpadToScreen(state) {
     down.style.background = "#272929";
     down.style.color = "#fff";
     down.style.borderRadius = "10%";
-    down.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "s" }, true); };
+    down.style.userSelect = "none";
+    down.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "s" }, true); };   
     down.onpointerup = () => state.onKey({ key: "s" }, false);
     down.onpointercancel = () => state.onKey({ key: "s" }, false);
     down.onpointerout = () => state.onKey({ key: "s" }, false);
@@ -75,6 +77,7 @@ export function addDpadToScreen(state) {
     left.style.background = "#272929";
     left.style.color = "#fff";
     left.style.borderRadius = "10%";
+    left.style.userSelect = "none";
     left.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "a" }, true); };
     left.onpointerup = () => state.onKey({ key: "a" }, false);
     left.onpointercancel = () => state.onKey({ key: "a" }, false);
@@ -92,6 +95,7 @@ export function addDpadToScreen(state) {
     right.style.background = "#272929";
     right.style.color = "#fff";
     right.style.borderRadius = "10%";
+    right.style.userSelect = "none";
     right.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "d" }, true); };
     right.onpointerup = () => state.onKey({ key: "d" }, false);
     right.onpointercancel = () => state.onKey({ key: "d" }, false);
@@ -99,7 +103,6 @@ export function addDpadToScreen(state) {
     dpad.appendChild(right);
 
     document.body.appendChild(dpad);
-
 }
 
 export function addActionsButtonsToScreen(state) {
@@ -116,7 +119,7 @@ export function addActionsButtonsToScreen(state) {
     aButton.style.background = "#9a2257";
     aButton.style.color = "#fff";
     aButton.style.fontSize = "2em";
-    // aButton.style.border = "none";
+    aButton.style.userSelect = "none";
     aButton.style.borderRadius = "50%";
     aButton.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
     aButton.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "l" }, true); };
@@ -136,7 +139,7 @@ export function addActionsButtonsToScreen(state) {
     bButton.style.background = "#9a2257";
     bButton.style.color = "#fff";
     bButton.style.fontSize = "2em";
-    // bButton.style.border = "none";x
+    bButton.style.userSelect = "none";
     bButton.style.borderRadius = "50%";
     bButton.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
     bButton.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "j" }, true); };
