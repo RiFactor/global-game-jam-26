@@ -20,12 +20,12 @@ const DrawSate = Object.freeze({
 //      loadPlayerSprites(asset_deck); // defaults to player
 //      loadPlayerSprites(asset_deck, {character = "something"});
 //
-async function loadPlayerSprites(asset_deck, { character = "player" } = {}) {
+async function loadPlayerSprites(asset_deck, { character = "player", tint_key = 0 } = {}) {
     const frame_indices = [1, 2, 3, 4];
 
     const fetchFacing = (facing) => {
         return frame_indices.map(async (i) => {
-            return asset_deck.fetchImage(`assets/player/${facing}${i}.png`);
+            return asset_deck.fetchImage(`assets/player/${facing}${i}.png`, tint_key);
         });
     };
 
@@ -42,12 +42,13 @@ async function loadPlayerSprites(asset_deck, { character = "player" } = {}) {
 //      ret[i][j]
 //
 // is the jth orientation of the ith mask.
-async function loadAllMaskSprites(asset_deck, { character = "player" } = {}) {
+async function loadAllMaskSprites(asset_deck, { character = "player", tint_key = "arlecchino" } = {}) {
     const orientations = ["front", "left", "right"];
     const fetchMask = (name) => {
         return orientations.map(async (i) => {
             return asset_deck.fetchImage(
                 `assets/player/masks/${name}/${i}.png`,
+                tint_key
             );
         });
     };
@@ -57,7 +58,7 @@ async function loadAllMaskSprites(asset_deck, { character = "player" } = {}) {
 
     // await all of them together
     const all_masks = await Promise.all(all_promises);
-    const back = await asset_deck.fetchImage(`assets/player/masks/back.png`);
+    const back = await asset_deck.fetchImage(`assets/player/masks/back.png`, tint_key);
 
     // split back up into their characters
     var masks = new Array();

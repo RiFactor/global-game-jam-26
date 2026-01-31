@@ -3,14 +3,46 @@ export class AssetDeck {
     constructor() {
         this.sprite_buffer = new Array();
         this.audio_buffer = new Array();
+        this.tint_buffer = new Map();
+    }
+
+    gaussianRandom() {
+        const u = 1 - Math.random();
+        const v = Math.random();
+        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+
+    toDoubleHex(number) {
+        var basic = number.toString(16);
+        if (basic.length > 1) {
+            return basic;
+        } else {
+            return "0" + basic;
+        }
+    }
+
+    randomTint() {
+        var r = Math.abs(this.gaussianRandom());
+        var g = Math.abs(this.gaussianRandom());
+        var b = Math.abs(this.gaussianRandom());
+        var normalisation = 255.0 / Math.sqrt(r*r + g*g + b*b);
+        var normalised_r = Math.round(r * normalisation);
+        var normalised_g = Math.round(g * normalisation);
+        var normalised_b = Math.round(b * normalisation);
+        return "#" + this.toDoubleHex(normalised_r) + this.toDoubleHex(normalised_g) + this.toDoubleHex(normalised_b);
+    }
+
+    // Gets or generates the fill tint for a given key.
+    getOrCreateTint(tint_key) {
+        return this.tint_buffer.getOrInsertComputed(tint_key, (key) => this.randomTint());
     }
 
     // Preload an image. Example usage is
     //
-    //     const image_index = await deck.fetchImage("./asset.png");
+    //     const image_index = await deck.fetchImage("./asset.png", "arlecchino");
     //     const image = deck.sprite_buffer[image_index];
     //
-    fetchImage(uri) {
+    fetchImage(uri, tint_key) {
         return new Promise((resolve, err) => {
             var image = new Image();
             image.src = uri;
@@ -18,7 +50,17 @@ export class AssetDeck {
             image.onload = () => {
                 console.log(`Asset fetched: ${uri}`);
                 var subcanvas = new OffscreenCanvas(image.width, image.height);
-                subcanvas.getContext("2d").drawImage(image, 0, 0);
+                var drawContext = subcanvas.getContext("2d")
+                drawContext.drawImage(image, 0, 0);
+                drawContext.fillStyle = this.getOrCreateTint(tint_key);
+                drawContext.globalCompositeOperation = 'multiply';
+                drawContext.fillRect(0, 0, image.width, image.height);
+                var tintedBitmap = subcanvas.transferToImageBitmap();
+                drawContext.clearRect(0, 0, image.width, image.height);
+                drawContext.globalCompositeOperation = 'source-over';
+                drawContext.drawImage(image, 0, 0);
+                drawContext.globalCompositeOperation = 'source-in';
+                drawContext.drawImage(tintedBitmap, 0, 0);
                 this.sprite_buffer.push(subcanvas.transferToImageBitmap());
                 const index = this.sprite_buffer.length - 1;
                 resolve(index);
