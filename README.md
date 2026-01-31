@@ -1,4 +1,4 @@
-# <a><img src="client/assets/player/front1.png" width="45"/></a> global-game-jam-26
+# <a><img src="client/assets/player/masks/arlecchino/front.png" width="45"/></a> global-game-jam-26
 
 ```
 +--------------------------------------------------------------------------------+
@@ -54,5 +54,9 @@ then navigate to [localhost:8000](https://localhost:8000) in your browser.
 
 ```bash
 make
+```
+or
+```bash
+make docker
 ```
 then navigate to [localhost:8000](https://localhost:8000) in your browser.
