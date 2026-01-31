@@ -1,3 +1,6 @@
+import * as config from "./config.js";
+import * as utils from "./utils.js";
+
 // Used for storing all the assets that we need to include (sprites and audio).
 export class AssetDeck {
     constructor() {
@@ -131,9 +134,9 @@ function renderText(ctx, color, font = "30px Arial", text, x, y) {
     ctx.fillText(text, x, y);
 }
 
-export function setCanvasSize(canvas) {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+export function onResize(canvas) {
+    canvas.width = 800;
+    canvas.height = 600;
 }
 
 export function initializeCanvas(canvas) {
@@ -151,4 +154,72 @@ export function drawBackground(canvas, asset_bank) {
         100,
         100,
     );
+}
+
+export class GameMap {
+    constructor() {}
+
+    draw(dt, canvas, asset_deck) {
+        drawBackground(canvas);
+    }
+}
+
+export class ViewPort {
+    constructor(canvas) {
+        this.x = 0;
+        this.y = 0;
+
+        this.height = 600;
+        this.width = 800;
+        this.speed_multiplier = 2;
+
+        // How large zone should be where the camera starts to
+        // follow the player.
+        this.move_zone = 20;
+        this.canvas = canvas;
+    }
+
+    draw(callback, x, y) {
+        callback(this.canvas, x - this.x, y - this.y);
+    }
+
+    // Used to work out which horizontal direction the viewport needs to move
+    // given a target point `x`
+    _xSign(x) {
+        return Math.sign(x - this.x + this.width / 2);
+    }
+
+    // Used to work out which vertical direction the viewport needs to move
+    // given a target point `y`
+    _ySign(y) {
+        return Math.sign(y - this.y + this.height / 2);
+    }
+
+    // Center the viewport on a given point moving with a given speed.
+    follow(dt, x, y, speed) {
+        let vx = 0;
+        let vy = 0;
+
+        // translate to viewport coordinates
+        const X = x - this.x;
+        const Y = y - this.y;
+
+        if (X < this.move_zone) {
+            vx = -this._xSign(x);
+        } else if (X > this.width - this.move_zone - 100) {
+            vx = this._xSign(x);
+        }
+
+        if (Y < this.move_zone) {
+            vy = -this._ySign(y);
+        } else if (Y > this.height - this.move_zone - 100) {
+            vy = this._ySign(y);
+        }
+
+        const norm = utils.magnitude(vx, vy);
+        if (norm > 0) {
+            this.x += (this.speed_multiplier * vx * dt * speed) / norm;
+            this.y += (this.speed_multiplier * vy * dt * speed) / norm;
+        }
+    }
 }

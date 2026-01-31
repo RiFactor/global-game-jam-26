@@ -1,4 +1,5 @@
 import * as config from "./config.js";
+import * as utils from "./utils.js";
 
 // An immutable enumeration representing the directions that a character can be
 // facing / moving.
@@ -88,8 +89,8 @@ class Character {
     // Accepts an array of sprite frames, which it uses to draw itself. These
     // should be `Facing` order (see above).
     constructor(sprite_frames, mask_frames) {
-        this.x = 10;
-        this.y = 10;
+        this.x = 0;
+        this.y = 0;
         this.vx = 0;
         this.vy = 0;
         this.speed = config.MEDIUM;
@@ -105,7 +106,7 @@ class Character {
     }
 
     // Draw the sprite.
-    draw(dt, canvas, asset_deck) {
+    draw(dt, viewport, asset_deck) {
         this.timer += dt;
 
         var anim_frame = 0;
@@ -116,35 +117,32 @@ class Character {
                 this.timer = 0;
                 anim_frame = 3;
             }
+        } else {
+            this.timer = 0;
         }
 
         const frame_index =
             this.sprite_frames[this.orientation * 4 + anim_frame];
         const frame = asset_deck.getSprite(frame_index);
-        canvas.ctx.drawImage(frame, this.x, this.y, this.width, this.height);
 
         const mask_frame = asset_deck.getSprite(
             this.mask_frames[0][this.orientation],
         );
-        canvas.ctx.drawImage(
-            mask_frame,
+
+        viewport.draw(
+            (canvas, x, y) => {
+                canvas.ctx.drawImage(frame, x, y, this.width, this.height);
+                canvas.ctx.drawImage(mask_frame, x, y, this.width, this.height);
+            },
             this.x,
             this.y,
-            this.width,
-            this.height,
         );
     }
 
     // Called once per loop. Updates all logic and position of the Character.
     update(dt) {
-        const norm = Math.sqrt(Math.pow(this.vx, 2) + Math.pow(this.vy, 2));
-        if (norm > 0) {
-            this.draw_state = DrawSate.MOVING;
-            this.x += (this.vx / norm) * this.speed * dt;
-            this.y += (this.vy / norm) * this.speed * dt;
-        } else {
-            this.draw_state = DrawSate.STATIONARY;
-        }
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
     }
 
     // Given a `facing` direction, move the character that way.
@@ -165,7 +163,15 @@ class Character {
             default:
                 throw new Error("Unreachable");
         }
+
         this.orientation = facing;
+
+        const norm = utils.magnitude(this.vx, this.vy);
+        if (norm != 0) {
+            this.draw_state = DrawSate.MOVING;
+            this.vx = (this.vx / norm) * this.speed;
+            this.vy = (this.vy / norm) * this.speed;
+        }
     }
 
     // Called to stop motion in a given direction from `facing`.
@@ -181,6 +187,10 @@ class Character {
                 break;
             default:
                 throw new Error("Unreachable");
+        }
+
+        if (this.vx == 0 && this.vy == 0) {
+            this.draw_state = DrawSate.STATIONARY;
         }
     }
 }

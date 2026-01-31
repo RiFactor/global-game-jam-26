@@ -1,10 +1,5 @@
 "use strict";
-import { AssetDeck, setCanvasSize, drawBackground } from "./canvas.js";
-
-// Define updateCanvas locally to avoid import errors
-function updateCanvas(canvas, x, y) {
-    drawBackground(canvas, x, y);
-}
+import { AssetDeck, onResize, GameMap, ViewPort } from "./canvas.js";
 
 import * as config from "./config.js";
 import {
@@ -33,6 +28,11 @@ class State {
         // The player controlled character
         this.player = null;
 
+        this.game_map = new GameMap();
+
+        // This controls where on the map we are drawing things
+        this.viewport = new ViewPort(this.canvas);
+
         // Associate the connection to the server
         this.conn = connection;
     }
@@ -52,20 +52,27 @@ class State {
         this.characters.push(new Character(enemy_sprites, enemy_masks));
 
         this.player = new Character(character_sprites, character_masks);
+        // This is just a placeholder calculation to center the player in the viewport
+        this.player.x = this.viewport.width / 2 - 50;
+        this.player.y = this.viewport.height / 2 - 50;
 
-        setCanvasSize(this.canvas);
+        onResize(this.canvas);
         console.log("Game ready");
     }
 
     // Drawing function. This is automatically called by
     // `requestAnimationFrame`.
     draw(dt) {
-        drawBackground(this.canvas, this.assets);
-
-        this.player.draw(dt, this.canvas, this.assets);
-
+        this.viewport.follow(
+            dt,
+            this.player.x,
+            this.player.y,
+            this.player.speed,
+        );
+        this.game_map.draw(dt, this.canvas);
+        this.player.draw(dt, this.viewport, this.assets);
         this.characters.forEach((c) => {
-            c.draw(dt, this.canvas, this.assets);
+            c.draw(dt, this.viewport, this.assets);
         });
     }
 
@@ -102,8 +109,7 @@ class State {
 
     // Called whenever the window is resized.
     onResize() {
-        setCanvasSize(this.canvas);
-        updateCanvas(this.canvas, 0, 0);
+        onResize(this.canvas);
     }
 
     update(dt) {
