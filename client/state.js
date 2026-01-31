@@ -25,6 +25,7 @@ class State {
 
         // This is just example code for now.
         this.characters = new Array();
+        this.other_players = new Array();
         // The player controlled character
         this.player = null;
 
@@ -42,6 +43,10 @@ class State {
         this.key_down = false;
         this.key_left = false;
         this.key_right = false;
+
+        // Functions for creating a new character and new player
+        this.addPlayer = undefined;
+        this.addCharacter = undefined;
     }
 
     // Entry point to start the game
@@ -56,8 +61,15 @@ class State {
             character: "enemy",
         });
 
-        this.characters.push(new Character(enemy_sprites, enemy_masks));
-        console.log(`${this.characters[0].x}`);
+        this.addCharacter = () => {
+            this.characters.push(new Character(enemy_sprites, enemy_masks));
+        };
+
+        this.addPlayer = () => {
+            this.other_players.push(
+                new Character(character_sprites, character_masks),
+            );
+        };
 
         this.player = new Character(character_sprites, character_masks);
         // This is just a placeholder calculation to center the player in the viewport
@@ -68,15 +80,53 @@ class State {
 
         // Start listening for updates
         this.conn.websocket.addEventListener("message", (e) => {
+            // todo: get the client ID to know the server has registered
             const message = JSON.parse(e.data);
 
-            // Update positions of characters on receipt of message
-            let n_char = this.characters.length;
-            for (let i = 0; i < n_char; i++) {
-                this.characters[i].x = message.content.x_pos;
-                this.characters[i].y = message.content.y_pos;
-                this.characters[i].orientation = message.content.orientation;
-                this.characters[i].mask = message.content.mask;
+            // Get the player ID
+            if (message.player_id !== undefined) {
+                this.conn.player_id = message.player_id;
+                return;
+            }
+
+            // Update the characters (enemies)
+            if (message.characters !== undefined) {
+                var n_char = this.characters.length;
+                let new_characters =
+                    message.characters.length - this.characters.length;
+
+                if (new_characters < 0) {
+                    console.error("Missing characters");
+                } else if (new_characters > 0) {
+                    for (let i = 0; i < new_characters; i++) {
+                        this.addCharacter();
+                    }
+                }
+
+                // Update positions of characters on receipt of message
+                for (let i = 0; i < n_char; i++) {
+                    this.characters[i].setState(message.characters[i]);
+                }
+            }
+
+            // Update the players (also enemies, but human controlled)
+            if (message.players !== undefined) {
+                var n_players = this.other_players.length;
+                let new_players =
+                    message.players.length - this.other_players.length;
+
+                if (new_characters < 0) {
+                    console.error("Missing players");
+                } else if (new_players > 0) {
+                    for (let i = 0; i < new_players; i++) {
+                        this.addPlayer();
+                    }
+                }
+
+                // Update positions of characters on receipt of message
+                for (let i = 0; i < n_players; i++) {
+                    this.other_players[i].setState(message.players[i]);
+                }
             }
         });
 

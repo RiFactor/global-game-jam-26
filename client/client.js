@@ -16,7 +16,7 @@ class Connection {
         });
 
         // TODO: Get the connection ID from the server (somehow)
-        this.connection_id = 0;
+        this.player_id = 0;
     }
 
     // Keep pinging the server
@@ -36,12 +36,13 @@ class Connection {
     send(player) {
         if (this.ready) {
             const update = {
-                player_id: this.connection_id,
                 content: {
-                    x_pos: player.x,
-                    y_pos: player.y,
+                    x: player.x,
+                    y: player.y,
+                    vx: player.vx,
+                    vy: player.vy,
                     orientation: player.orientation,
-                    moving: player.drawstate,
+                    draw_state: player.draw_state,
                     mask: player.mask,
                 },
             };

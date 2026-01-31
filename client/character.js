@@ -194,6 +194,17 @@ class Character {
         this.vx = (vx / norm) * this.speed;
         this.vy = (vy / norm) * this.speed;
     }
+
+    // Set update state based on message from server
+    setState(new_state) {
+        this.x = new_state.x;
+        this.y = new_state.y;
+        this.vx = new_state.vx;
+        this.vy = new_state.vy;
+        this.orientation = new_state.orientation;
+        this.draw_state = new_state.draw_state;
+        this.mask = new_state.mask;
+    }
 }
 
 export { Character, Facing, loadPlayerSprites, loadAllMaskSprites };
