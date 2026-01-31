@@ -1,0 +1,7 @@
+services:
+  mask-game:
+    container_name: mask-game
+    build:
+      context: .
+    ports:
+      - 8000:8000
