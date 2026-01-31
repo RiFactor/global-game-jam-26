@@ -10,11 +10,6 @@ class Connection {
             console.log(`ERROR: ${e}`);
         });
 
-        this.websocket.addEventListener("message", (e) => {
-            console.log(`RECEIVED: ${e.data}: ${counter}`);
-            counter++;
-        });
-
         // TODO: Get the connection ID from the server (somehow)
         this.connection_id = 0;
     }
