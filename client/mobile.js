@@ -1,9 +1,16 @@
-
 export function isMobile() {
     const ua = navigator.userAgent || navigator.vendor || window.opera;
     // Check for common mobile device indicators in the user agent string
     const mobileIndicators = [
-        "Android", "webOS", "iPhone", "iPad", "iPod", "BlackBerry", "Windows Phone", "Opera Mini", "IEMobile"
+        "Android",
+        "webOS",
+        "iPhone",
+        "iPad",
+        "iPod",
+        "BlackBerry",
+        "Windows Phone",
+        "Opera Mini",
+        "IEMobile",
     ];
     for (const indicator of mobileIndicators) {
         if (ua.includes(indicator)) {
@@ -18,7 +25,7 @@ export function addDpadToScreen(state) {
     dpad.id = "dpad";
     dpad.style.position = "absolute";
     dpad.style.top = "60%";
-    dpad.style.left = "20%"
+    dpad.style.left = "20%";
     dpad.style.transform = "translateX(-50%)";
     dpad.style.width = "240px";
     dpad.style.height = "240px";
@@ -140,4 +147,3 @@ export function addActionsButtonsToScreen(state) {
 
     document.body.appendChild(actionButtons);
 }
-

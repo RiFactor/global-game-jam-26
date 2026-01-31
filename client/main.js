@@ -1,11 +1,13 @@
 // This is how you import in a really basic way
-import { Connection } from "./client.js";
-import { URI } from "./config.js";
 import { State } from "./state.js";
-import { isMobile, addDpadToScreen, addActionsButtonsToScreen} from "./mobile.js";
+import {
+    isMobile,
+    addDpadToScreen,
+    addActionsButtonsToScreen,
+} from "./mobile.js";
 
 window.onload = () => {
-    document.addEventListener("dblclick", function(e) {
+    document.addEventListener("dblclick", function (e) {
         e.preventDefault();
     });
 
@@ -13,13 +15,10 @@ window.onload = () => {
     console.log(mobile);
 
     // Set up coonection to server
-    const connection = new Connection(URI);
-
     const canvas = document.getElementById("canvas");
-    var state = new State(canvas, connection);
+    var state = new State(canvas);
 
     if (isMobile()) {
-        
         const canvas = document.getElementById("canvas");
         // Example: make canvas fill most of the viewport
         canvas.style.width = "98vw";

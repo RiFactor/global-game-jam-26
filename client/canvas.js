@@ -207,11 +207,11 @@ export class ViewPort {
         const X = x - this.x;
         const Y = y - this.y;
 
-        if ((X < this.move_zone) || (X > this.width - this.move_zone - 96)) {
+        if (X < this.move_zone || X > this.width - this.move_zone - 96) {
             move_x += 1;
         }
 
-        if ((Y < this.move_zone) || (Y > this.height - this.move_zone - 96)) {
+        if (Y < this.move_zone || Y > this.height - this.move_zone - 96) {
             move_y += 1;
         }
 

@@ -51,26 +51,26 @@ async function loadPlayerSprites(
 // is the jth orientation of the ith mask.
 async function loadAllMaskSprites(
     asset_deck,
-    { character = "player", tint_key = "arlecchino" } = {},
+    { character = "player", mask_name = "il-dottore" } = {},
 ) {
     const orientations = ["front", "left", "right"];
     const fetchMask = (name) => {
         return orientations.map(async (i) => {
             return asset_deck.fetchImage(
                 `assets/${character}/masks/${name}/${i}.png`,
-                tint_key,
+                mask_name,
             );
         });
     };
 
     var all_promises = new Array();
-    all_promises = all_promises.concat(fetchMask("arlecchino"));
+    all_promises = all_promises.concat(fetchMask(mask_name));
 
     // await all of them together
     const all_masks = await Promise.all(all_promises);
     const back = await asset_deck.fetchImage(
         `assets/${character}/masks/back.png`,
-        tint_key,
+        mask_name,
     );
 
     // split back up into their characters
@@ -100,6 +100,7 @@ class Character {
         this.mask_frames = mask_frames;
         // Orientation is the same as Facing
         this.orientation = Facing.DOWN;
+        this.active = true;
 
         this.timer = 0;
         this.draw_state = DrawSate.STATIONARY;
@@ -193,6 +194,18 @@ class Character {
         this.draw_state = DrawSate.MOVING;
         this.vx = (vx / norm) * this.speed;
         this.vy = (vy / norm) * this.speed;
+    }
+
+    // Set update state based on message from server
+    setState(new_state) {
+        this.x = new_state.x;
+        this.y = new_state.y;
+        this.vx = new_state.vx;
+        this.vy = new_state.vy;
+        this.orientation = new_state.orientation;
+        this.draw_state = new_state.draw_state;
+        this.mask = new_state.mask;
+        this.active = new_state.active;
     }
 }
 

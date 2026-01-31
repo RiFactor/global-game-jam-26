@@ -30,7 +30,6 @@ async function requestHandler(req, res) {
     if (req.url == "/ws") return; // it's already been upgraded
 
     const file_path = path.join(STATIC_PATH, lookupPath(req.url));
-    console.log(file_path);
     const file_exists = await fs.promises.access(file_path).then(...toBool);
 
     var status_code = 200;
@@ -46,26 +45,137 @@ async function requestHandler(req, res) {
         res.end("Not found\n");
     }
 
-    console.log(`${req.method} ${req.url} ${status_code}`);
+    // console.log(`${req.method} ${req.url} ${status_code}`);
+}
+
+class CharacterState {
+    player_id = "";
+    x = 0;
+    y = 0;
+    vx = 0;
+    vy = 0;
+    orientation = 0;
+    draw_state = 0;
+    mask = 0;
+    active = true;
+}
+
+class NonPlayerCharacter {
+    constructor() {
+        this.state = new CharacterState();
+    }
+}
+
+class PlayerHandler {
+    constructor(socket, player_id) {
+        this.socket = socket;
+        this.state = new CharacterState();
+        this.state.player_id = player_id;
+    }
+
+    // Update the player state from an incoming message.
+    async handleMessage(data) {
+        const msg = JSON.parse(data).content;
+        this.state.x = msg.x;
+        this.state.y = msg.y;
+        this.state.vx = msg.vx;
+        this.state.vy = msg.vy;
+        this.state.orientation = msg.orientation;
+        this.state.draw_state = msg.draw_state;
+        this.state.mask = msg.mask;
+    }
+}
+
+class ServerState {
+    constructor(server, websocket_server) {
+        this.players = new Array();
+        this.npcs = new Array();
+        this.server = server;
+        this.websocket_server = websocket_server;
+    }
+
+    newNPC({ x = 400, y = 300 } = {}) {
+        var npc = new NonPlayerCharacter();
+        npc.state.vx = (Math.random() - 0.5) * 0.1;
+        npc.state.vy = (Math.random() - 0.5) * 0.1;
+        this.npcs.push(npc);
+    }
+
+    async onClientConnection(socket, req) {
+        const ip = req.socket.remoteAddress;
+        const port = req.socket._peername.port;
+
+        const player_id = `${ip}:${port}`;
+
+        var player = undefined;
+        for (var p of this.players) {
+            if (p.state.player_id == player_id) {
+                player = p;
+                player.socket = socket;
+                console.log(`Player reconnected: ${player_id}`);
+                break;
+            }
+        }
+
+        if (player === undefined) {
+            player = new PlayerHandler(socket, player_id);
+            this.players.push(player);
+            console.log(`Websocket connected from ${ip}:${port}`);
+        }
+
+        socket.on("message", (data) => player.handleMessage(data));
+        socket.on("error", console.error);
+        socket.on("close", () => {
+            console.log(`Player ${player_id} disconnected.`);
+            player.state.active = false;
+        });
+
+        // Need to let the player known that their ID is
+        socket.send(JSON.stringify({ player_id: player_id }));
+    }
+
+    updateNPCs(dt) {
+        this.npcs.forEach((c) => {
+            c.state.x += c.state.vx * dt;
+            c.state.y += c.state.vy * dt;
+        });
+    }
+
+    // Broadcast all positions to all players
+    async broadcastUpdates() {
+        const message = JSON.stringify({
+            players: this.players.map((p) => p.state),
+            characters: this.npcs.map((c) => c.state),
+        });
+
+        return this.players.map(async (player) => {
+            player.socket.send(message);
+        });
+    }
+
+    bind(port) {
+        this.websocket_server.on("connection", (socket, req) =>
+            this.onClientConnection(socket, req),
+        );
+        this.server.listen(port);
+        console.log(`Server running at http://127.0.0.1:${PORT}/`);
+
+        this.newNPC();
+
+        var previous_time = Date.now();
+        setInterval(async () => {
+            const now = Date.now();
+            this.updateNPCs(now - previous_time);
+            previous_time = now;
+        }, 1000 / 30); // call 30 times a second
+
+        // triger periodically broadcasting all character states
+        setInterval(async () => {
+            await this.broadcastUpdates();
+        }, 1000 / 10); // call 10 times a second
+    }
 }
 
 const server = http.createServer(requestHandler);
-
-const wss = new ws.WebSocketServer({ server });
-
-wss.on("connection", function connection(ws) {
-    console.log("Websocket connected");
-    ws.on("error", console.error);
-
-    ws.on("message", function message(data) {
-        console.log("received: %s", data);
-        data_parsed = JSON.parse(data);
-
-        ws.send(JSON.stringify(data_parsed));
-    });
-
-    ws.send("Welcome, traveler.");
-});
-
-server.listen(PORT);
-console.log(`Server running at http://127.0.0.1:${PORT}/`);
+const state = new ServerState(server, new ws.WebSocketServer({ server }));
+state.bind(PORT);
