@@ -76,7 +76,8 @@ class State {
             dt,
             this.player.x,
             this.player.y,
-            this.player.speed,
+            this.player.vx,
+            this.player.vy,
         );
         this.game_map.draw(dt, this.viewport, this.assets);
         this.player.draw(dt, this.viewport, this.assets);

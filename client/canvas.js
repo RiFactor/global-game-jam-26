@@ -198,30 +198,27 @@ export class ViewPort {
     }
 
     // Center the viewport on a given point moving with a given speed.
-    follow(dt, x, y, speed) {
-        let vx = 0;
-        let vy = 0;
+    follow(dt, x, y, vx, vy) {
+        let move_x = 0;
+        let move_y = 0;
 
         // translate to viewport coordinates
         const X = x - this.x;
         const Y = y - this.y;
 
         if (X < this.move_zone) {
-            vx = -this._xSign(x);
+            move_x += -this._xSign(x);
         } else if (X > this.width - this.move_zone - 96) {
-            vx = this._xSign(x);
+            move_x += this._xSign(x);
         }
 
         if (Y < this.move_zone) {
-            vy = -this._ySign(y);
+            move_y += -this._ySign(y);
         } else if (Y > this.height - this.move_zone - 96) {
-            vy = this._ySign(y);
+            move_y += this._ySign(y);
         }
 
-        const norm = utils.magnitude(vx, vy);
-        if (norm > 0) {
-            this.x += (this.speed_multiplier * vx * dt * speed) / norm;
-            this.y += (this.speed_multiplier * vy * dt * speed) / norm;
-        }
+        this.x += this.speed_multiplier * move_x * dt * vx;
+        this.y += this.speed_multiplier * move_y * dt * vy;
     }
 }
