@@ -17,7 +17,9 @@ export class AssetDeck {
             // Setup a hook to store the image in the buffer
             image.onload = () => {
                 console.log(`Asset fetched: ${uri}`);
-                this.sprite_buffer.push(image);
+                var subcanvas = new OffscreenCanvas(image.width, image.height);
+                subcanvas.getContext("2d").drawImage(image, 0, 0);
+                this.sprite_buffer.push(subcanvas.transferToImageBitmap());
                 const index = this.sprite_buffer.length - 1;
                 resolve(index);
             };
