@@ -18,7 +18,7 @@ export class AssetDeck {
             image.onload = () => {
                 console.log(`Asset fetched: ${uri}`);
                 this.sprite_buffer.push(image);
-                const index = this.sprite_buffer.length;
+                const index = this.sprite_buffer.length - 1;
                 resolve(index);
             };
             image.onerror = err;
