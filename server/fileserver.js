@@ -59,9 +59,9 @@ wss.on("connection", function connection(ws) {
 
     ws.on("message", function message(data) {
         console.log("received: %s", data);
-        data_parsed = JSON.parse(data)
+        data_parsed = JSON.parse(data);
 
-        ws.send(JSON.stringify(data_parsed))
+        ws.send(JSON.stringify(data_parsed));
     });
 
     ws.send("Welcome, traveler.");
