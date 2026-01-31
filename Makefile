@@ -4,7 +4,7 @@ dev-server:
 	node server/fileserver.js
 
 format:
-	prettier --tab-width=4 -w client
+	prettier --tab-width=4 -w client server
 
 docker:
 	docker run -it \
