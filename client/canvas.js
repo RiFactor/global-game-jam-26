@@ -52,10 +52,6 @@ export class AssetDeck {
     }
 }
 
-function clearCanvas(ctx) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
 function ChessboardPattern(ctx, canvas) {
     const squareSize = 50;
     const rows = Math.ceil(canvas.height / squareSize);
@@ -82,8 +78,8 @@ function renderText(ctx, color, font = "30px Arial", text, x, y) {
     ctx.font = font;
     ctx.fillStyle = color;
     ctx.fillText(text, x, y);
-    // console.log("Text rendered");
 }
+
 export function setCanvasSize(canvas) {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;

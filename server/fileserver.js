@@ -18,7 +18,6 @@ const MIME_TYPES = {
 };
 
 const STATIC_PATH = path.join(process.cwd(), "client");
-
 const toBool = [() => true, () => false];
 
 // Translates a url path to a file name.
@@ -65,8 +64,5 @@ wss.on("connection", function connection(ws) {
     ws.send("Welcome, traveler.");
 });
 
-
-
 server.listen(PORT);
-
 console.log(`Server running at http://127.0.0.1:${PORT}/`);

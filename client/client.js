@@ -19,7 +19,7 @@ class Connection {
         this.connection_id = 0
     }
 
-     // Keep pinging the server
+    // Keep pinging the server
     ping() {
         this.websocket.addEventListener("open", () => {
             console.log("CONNECTED");
