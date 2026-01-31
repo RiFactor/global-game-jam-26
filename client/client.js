@@ -10,7 +10,7 @@ class Connection {
             console.log(`ERROR: ${e}`)
         })
         
-        websocket.addEventListener("message", (e) => {
+        this.websocket.addEventListener("message", (e) => {
             console.log(`RECEIVED: ${e.data}: ${counter}`);
             counter++;
         });

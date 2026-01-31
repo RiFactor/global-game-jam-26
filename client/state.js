@@ -7,8 +7,7 @@ import {
 } from "./canvas.js";
 
 import * as config from "./config.js";
-import { Character, Facing, loadPlayerSprites } from "./character.js";
-import { websocket } from "./client.js"
+import { Character, Facing, loadPlayerSprites } from "./character.js"
 
 class State {
     constructor(canvas, connection) {
