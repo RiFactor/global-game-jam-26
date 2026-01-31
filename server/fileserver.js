@@ -49,23 +49,35 @@ async function requestHandler(req, res) {
     console.log(`${req.method} ${req.url} ${status_code}`);
 }
 
+class ServerState {
+    constructor(server, websocket_server) {
+        this.players = new Array();
+        this.server = server;
+        this.websocket_server = websocket_server;
+    }
+
+    onClientConnection(socket) {
+        console.log("Websocket connected");
+
+        socket.on("error", console.error);
+
+        socket.on("message", function message(data) {
+            console.log("received: %s", data);
+            const data_parsed = JSON.parse(data);
+
+            socket.send(JSON.stringify(data_parsed));
+        });
+
+        socket.send("Welcome, traveler.");
+    }
+
+    bind(port) {
+        this.websocket_server.on("connection", this.onClientConnection);
+        this.server.listen(port);
+        console.log(`Server running at http://127.0.0.1:${PORT}/`);
+    }
+}
+
 const server = http.createServer(requestHandler);
-
-const wss = new ws.WebSocketServer({ server });
-
-wss.on("connection", function connection(ws) {
-    console.log("Websocket connected");
-    ws.on("error", console.error);
-
-    ws.on("message", function message(data) {
-        console.log("received: %s", data);
-        data_parsed = JSON.parse(data);
-
-        ws.send(JSON.stringify(data_parsed));
-    });
-
-    ws.send("Welcome, traveler.");
-});
-
-server.listen(PORT);
-console.log(`Server running at http://127.0.0.1:${PORT}/`);
+const state = new ServerState(server, new ws.WebSocketServer({ server }));
+state.bind(PORT);
