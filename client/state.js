@@ -8,9 +8,10 @@ import {
 
 import * as config from "./config.js";
 import { Character, Facing, loadPlayerSprites } from "./character.js";
+import { websocket } from "./client.js"
 
 class State {
-    constructor(canvas) {
+    constructor(canvas, connection) {
         this.x = 10;
         this.y = 10;
         this.vx = 0;
@@ -27,6 +28,9 @@ class State {
         this.characters = new Array();
         // The player controlled character
         this.player = null;
+
+        // Associate the connection to the server
+        this.conn = connection
     }
 
     // Entry point to start the game
@@ -77,7 +81,11 @@ class State {
                 break;
             default:
                 console.log(e.key);
-        }
+        };
+
+        // After updating the movement, send updated position to server
+        this.conn.send(this.player)
+
     }
 
     // Called whenever the window is resized.
