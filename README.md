@@ -1,4 +1,4 @@
-# global-game-jam-26 ![](client/assets/player/front1.png)
+# <a><img src="client/assets/player/front1.png" width="45"/></a> global-game-jam-26 ![](client/assets/player/front1.png)
 
 ```
 +--------------------------------------------------------------------------------+
@@ -31,7 +31,7 @@ or build it yourself.
 docker compose up
 ```
 
-## ![](https://www.gnu.org/graphics/heckert_gnu.transp.small.png) Make
+## <a><img src="https://www.gnu.org/graphics/heckert_gnu.transp.small.png" width="45"/></a> Make
 ### Requirements
 - [node](https://nodejs.org/en)
 - [make](https://www.gnu.org/software/make/)
