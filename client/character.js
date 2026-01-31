@@ -109,8 +109,7 @@ class Character {
         this.timer = 0;
         this.draw_state = DrawSate.STATIONARY;
         this.anim_frame = 0;
-        this.frame_delay = 50;
-        this.mask = 0;
+        this.frame_delay = 100;
         this.player_id = null;
 
         this.collision_box = new collision.CollisionBox(
