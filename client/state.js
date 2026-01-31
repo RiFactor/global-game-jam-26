@@ -56,16 +56,28 @@ class State {
 
     // Entry point to start the game
     async start() {
-        const character_sprites = await loadPlayerSprites(this.assets);
-        const enemy_sprites = await loadPlayerSprites(this.assets, {
-            character: "enemy",
-            tint_key: "arlecchino",
-        });
-        const character_masks = await loadAllMaskSprites(this.assets);
-        const enemy_masks = await loadAllMaskSprites(this.assets, {
-            character: "enemy",
-            mask_name: "arlecchino",
-        });
+        const all_assets = await Promise.all([
+            loadPlayerSprites(this.assets),
+            loadPlayerSprites(this.assets, {
+                character: "enemy",
+                tint_key: "arlecchino",
+            }),
+            loadAllMaskSprites(this.assets),
+            loadAllMaskSprites(this.assets, {
+                character: "enemy",
+                mask_name: "arlecchino",
+            }),
+        ]);
+        const character_sprites = all_assets[0];
+        const enemy_sprites = all_assets[1];
+        const character_masks = all_assets[2];
+        const enemy_masks = all_assets[3];
+
+        const map_index = await this.assets.fetchFile(
+            "/assets/maps/asscii-map1.txt",
+        );
+        // set and load the game map
+        this.game_map.setMap(this.assets.file_buffer[map_index]);
 
         this.addCharacter = () => {
             this.characters.push(new Character(enemy_sprites, enemy_masks));

@@ -7,6 +7,7 @@ export class AssetDeck {
     constructor() {
         this.sprite_buffer = new Array();
         this.audio_buffer = new Array();
+        this.file_buffer = new Array();
         this.tint_buffer = new Map();
     }
 
@@ -90,10 +91,25 @@ export class AssetDeck {
             audio.onload = () => {
                 console.log(`Asset fetched: ${uri}`);
                 this.audio_buffer.push(audio);
-                const index = this.audio_buffer.length;
+                const index = this.audio_buffer.length - 1;
                 resolve(index);
             };
             audio.onerror = err;
+        });
+    }
+
+    // Fetch a file as text.
+    fetchFile(uri) {
+        return new Promise((resolve, err) => {
+            fetch(uri)
+                .then((response) => {
+                    return response.text();
+                })
+                .then((text) => {
+                    this.file_buffer.push(text);
+                    const index = this.file_buffer.length - 1;
+                    resolve(index);
+                });
         });
     }
 
@@ -109,7 +125,7 @@ export class AssetDeck {
 }
 
 function ChessboardPattern(ctx, canvas, asset_bank, rows, cols, x, y) {
-    const squareSize = 48;
+    const squareSize = config.TILE_SIZE;
 
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
@@ -164,28 +180,100 @@ class Structure {
         this.y = y;
         this.collision_box = new CollisionBox(width, height);
     }
+
+    draw(canvas, x, y) {
+        canvas.ctx.fillStyle = "black";
+        canvas.ctx.fillRect(
+            x,
+            y,
+            this.collision_box.width,
+            this.collision_box.height,
+        );
+    }
 }
 
 export class GameMap {
     constructor() {
-        this.x_size = 64;
-        this.y_size = 64;
-
+        this.x_size = 0;
+        this.y_size = 0;
+        // TODO: make this a constant in the config
+        this.tile_size = config.TILE_SIZE;
         this.structures = new Array();
-        this.structures.push(new Structure(0, 0, 50, this.y_size * 50));
-        this.structures.push(new Structure(0, 0, this.x_size * 50, 50));
-
-        this.structures.push(new Structure(500, 0, 50, 500));
-        this.structures.push(new Structure(0, 500, 500, 50));
     }
 
     draw(dt, viewport, asset_deck) {
         drawBackground(viewport, asset_deck, this.x_size, this.y_size);
-        if (config.DRAW_COLLISION) {
-            this.structures.forEach((s) => {
-                s.collision_box.draw(viewport.canvas, s.x, s.y);
-            });
+        this.structures.forEach((s) => {
+            viewport.draw(
+                (canvas, x, y) => {
+                    s.draw(canvas, x, y);
+                    if (config.DRAW_COLLISION) {
+                        s.collision_box.draw(canvas, x, y);
+                    }
+                },
+                s.x,
+                s.y,
+            );
+        });
+    }
+
+    _setBoundaries() {
+        // left bar
+        this.structures.push(
+            new Structure(0, 0, this.tile_size, this.y_size * this.tile_size),
+        );
+        // top bar
+        this.structures.push(
+            new Structure(0, 0, this.x_size * this.tile_size, this.tile_size),
+        );
+        // right bar
+        this.structures.push(
+            new Structure(
+                (this.x_size - 1) * this.tile_size,
+                0,
+                this.tile_size,
+                this.y_size * this.tile_size,
+            ),
+        );
+        // bottom bar
+        this.structures.push(
+            new Structure(
+                0,
+                (this.y_size - 1) * this.tile_size,
+                this.x_size * this.tile_size,
+                this.tile_size,
+            ),
+        );
+    }
+
+    setMap(ascii_map) {
+        const matrix = utils.textToMatrix(ascii_map);
+        this.y_size = matrix.length;
+        if (this.y_size > 0) {
+            this.x_size = matrix[0].length;
         }
+
+        // for each row
+        matrix.forEach((row, j) => {
+            const y_offset = j * this.tile_size;
+            row.forEach((cell, i) => {
+                const x_offset = i * this.tile_size;
+
+                if (cell == "1") {
+                    this.structures.push(
+                        new Structure(
+                            x_offset,
+                            y_offset,
+                            this.tile_size,
+                            this.tile_size,
+                        ),
+                    );
+                }
+            });
+        });
+
+        console.log(matrix);
+        this._setBoundaries();
     }
 
     // Check for collisions with a character

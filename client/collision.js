@@ -52,8 +52,6 @@ class CollisionBox {
             return (a / Math.PI) * 180;
         }
 
-        console.log(toDeg(angle), toDeg(top_left));
-
         if (
             Math.abs(angle) > Math.PI / 2 &&
             Math.abs(angle) > Math.abs(top_left)

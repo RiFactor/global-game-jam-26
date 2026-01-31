@@ -3,6 +3,8 @@ const http = require("http");
 const path = require("path");
 const ws = require("ws");
 
+const config = require("../client/config.js");
+
 const PORT = 8000;
 
 const MIME_TYPES = {
@@ -15,6 +17,7 @@ const MIME_TYPES = {
     gif: "image/gif",
     ico: "image/x-icon",
     svg: "image/svg+xml",
+    txt: "text/ascii",
 };
 
 const STATIC_PATH = path.join(process.cwd(), "client");
