@@ -140,58 +140,41 @@ class Character {
     }
 
     // Called once per loop. Updates all logic and position of the Character.
-    update(dt) {
+    update(dt, up, down, left, right) {
+        // work out which direction the player is moving
+        var vx = 0;
+        var vy = 0;
+        if (right) {
+            vx += 1;
+        }
+        if (left) {
+            vx -= 1;
+        }
+        if (up) {
+            vy -= 1;
+        }
+        if (down) {
+            vy += 1;
+        }
+
+        this.setMovement(vx, vy);
         this.x += this.vx * dt;
         this.y += this.vy * dt;
     }
 
     // Given a `facing` direction, move the character that way.
-    startMove(facing) {
-        switch (facing) {
-            case Facing.UP:
-                this.vy = -1;
-                break;
-            case Facing.DOWN:
-                this.vy = 1;
-                break;
-            case Facing.LEFT:
-                this.vx = -1;
-                break;
-            case Facing.RIGHT:
-                this.vx = 1;
-                break;
-            default:
-                throw new Error("Unreachable");
-        }
-
-        this.orientation = facing;
-
-        const norm = utils.magnitude(this.vx, this.vy);
-        if (norm != 0) {
-            this.draw_state = DrawSate.MOVING;
-            this.vx = (this.vx / norm) * this.speed;
-            this.vy = (this.vy / norm) * this.speed;
-        }
-    }
-
-    // Called to stop motion in a given direction from `facing`.
-    stopMove(facing) {
-        switch (facing) {
-            case Facing.UP:
-            case Facing.DOWN:
-                this.vy = 0;
-                break;
-            case Facing.LEFT:
-            case Facing.RIGHT:
-                this.vx = 0;
-                break;
-            default:
-                throw new Error("Unreachable");
-        }
-
-        if (this.vx == 0 && this.vy == 0) {
+    setMovement(vx, vy) {
+        if (vx == 0 && vy == 0) {
             this.draw_state = DrawSate.STATIONARY;
+            this.vx = 0;
+            this.vy = 0;
+            return;
         }
+
+        const norm = utils.magnitude(vx, vy);
+        this.draw_state = DrawSate.MOVING;
+        this.vx = (vx / norm) * this.speed;
+        this.vy = (vy / norm) * this.speed;
     }
 }
 
