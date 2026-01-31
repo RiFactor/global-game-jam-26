@@ -140,11 +140,11 @@ export function addActionsButtonsToScreen(state) {
     aButton.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
     aButton.onpointerdown = (e) => {
         e.preventDefault();
-        state.onKey({ key: "l" }, true);
+        state.onKey({ key: "e" }, true);
     };
-    aButton.onpointerup = () => state.onKey({ key: "l" }, false);
-    aButton.onpointercancel = () => state.onKey({ key: "l" }, false);
-    aButton.onpointerout = () => state.onKey({ key: "l" }, false);
+    aButton.onpointerup = () => state.onKey({ key: "e" }, false);
+    aButton.onpointercancel = () => state.onKey({ key: "e" }, false);
+    aButton.onpointerout = () => state.onKey({ key: "e" }, false);
     actionButtons.appendChild(aButton);
 
     // Add B button
@@ -163,11 +163,11 @@ export function addActionsButtonsToScreen(state) {
     bButton.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
     bButton.onpointerdown = (e) => {
         e.preventDefault();
-        state.onKey({ key: "j" }, true);
+        state.onKey({ key: "q" }, true);
     };
-    bButton.onpointerup = () => state.onKey({ key: "j" }, false);
-    bButton.onpointercancel = () => state.onKey({ key: "j" }, false);
-    bButton.onpointerout = () => state.onKey({ key: "j" }, false);
+    bButton.onpointerup = () => state.onKey({ key: "q" }, false);
+    bButton.onpointercancel = () => state.onKey({ key: "q" }, false);
+    bButton.onpointerout = () => state.onKey({ key: "q" }, false);
     actionButtons.appendChild(bButton);
 
     document.body.appendChild(actionButtons);

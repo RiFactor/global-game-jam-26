@@ -144,26 +144,61 @@ function ChessboardPattern(ctx, canvas, asset_bank, rows, cols, x, y) {
     }
 }
 
-function renderHUDMask(ctx, player, asset_bank, x, y) {
+function renderPlayerStatsMask(ctx, player, asset_bank, x, y) {
     const maskImage = asset_bank.getSprite(
         player.mask_frames[0][1], // TODO: first index need to become dymanic once we have mask -player tracking
     );
     var size = 30;
-    ctx.drawImage(maskImage, x, y - size / 2, size, size);
+    ctx.drawImage(maskImage, x, y -5- size / 2, size, size);
 }
 
 function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
-    renderHUDMask(ctx, player, asset_bank, x, y);
+    renderPlayerStatsMask(ctx, player, asset_bank, x, y);
+
+    var playerName = player.player_id && typeof player.player_id === "string" && player.player_id.includes('f:')
+        ? String(player.player_id.split('f:')[1])
+        : "";
+
     renderText(
         canvas.ctx,
         "black",
-        "20px Arial",
-        "player: " + player.player_id,
+        "20px Consolas",
+        playerName || "Offline",
         x + 40,
         y,
         bold,
     );
+    renderText(
+        canvas.ctx,
+        "white",
+        "20px Consolas",
+        playerName || "Offline",
+        x + 38,
+        y - 2,
+        bold,
+    );
 }
+
+function renderStatusBar(ctx, player, x, y, bold, asset_bank) {
+    
+    const leftMask = asset_bank.getSprite(
+        player.mask_frames[0][1], // TODO: first index need to become dymanic once we have mask -player tracking
+    );
+    var size = 50;
+    ctx.drawImage(leftMask, x-size, y+10, size, size);
+
+    const currentMask = asset_bank.getSprite(
+        player.mask_frames[0][1], // TODO: first index need to become dymanic once we have mask -player tracking
+    );
+    ctx.drawImage(currentMask, x, y , size, size);
+
+    const rightMask = asset_bank.getSprite(
+        player.mask_frames[0][1], // TODO: first index need to become dymanic once we have mask -player tracking
+    );
+    ctx.drawImage(rightMask, x+size, y +10, size, size);
+}
+
+
 
 function renderText(ctx, color, font = "30px Arial", text, x, y, bold) {
     ctx.font = font;
@@ -223,6 +258,15 @@ function drawForeground(viewport, asset_bank, player, other_players) {
                     asset_bank,
                 );
             }
+
+            renderStatusBar(
+                canvas.ctx,
+                player,
+                canvas.width /2,
+                canvas.height - 50,
+                true,
+                asset_bank,
+            );
         },
         0,
         0,
@@ -443,7 +487,7 @@ function addGithubLink(canvas) {
         link.style.fontWeight = "bold";
         link.style.fontSize = "1.2em";
         link.style.letterSpacing = "0.1em";
-        link.style.fontFamily = "'Consolas', 'monospace'";
+        link.style.fontFamily = "'Consolas'";
         link.style.textAlign = "center";
         link.style.fontStyle = "italic";
         link.style.userSelect = "none";
