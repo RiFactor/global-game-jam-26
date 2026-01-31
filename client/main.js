@@ -6,9 +6,13 @@ window.onload = () => {
     var state = new State(canvas);
 
     // Hook up the key event listener
-    document.addEventListener("keypress", (e) => {
-        state.onKey(e);
+    document.addEventListener("keyup", (e) => {
+        state.onKey(e, false);
     });
+    document.addEventListener("keydown", (e) => {
+        state.onKey(e, true);
+    });
+
     // Register a means for resizing the canvas
     window.addEventListener("resize", () => {
         state.onResize();
