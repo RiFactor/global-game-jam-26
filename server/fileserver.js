@@ -83,28 +83,41 @@ class NonPlayerCharacter {
 
         // Iterate over players until an ACTIVE is found one in range, set them as target
         var dists = new Array();
+        var min_dist = 1e20
+        var potential_target = ""
         for (var p of players) {
             // skip if wrong mask
             if (p.state.mask != this.state.mask) {
                 continue
             };
 
-            var dist = Math.pow(
-                Math.sqrt(p.state.x - this.state.x, 2) +
+            var dist = Math.sqrt(
+                Math.pow(p.state.x - this.state.x, 2) +
                     Math.pow(p.state.y - this.state.y, 2),
             );
 
-            // Skip if distance too big
+            // Skip if distance too big or inactive
             if (dist > this.search_radius) {
                 continue;
-            }
+            };
 
-            // Set target
-            if (p.state.active) {
-                this.target = p.state.player_id;
-                return;
-            }
-        }
+            if  (!(p.state.active)) {
+                console.log("inactive");
+                continue;
+            };
+
+            // If dist less than min dist, switch potential target
+            console.log(`dist: ${dist}, mindist ${min_dist}`)
+            if (dist << min_dist) {
+                console.log(`setting new target ${p.state.player_id}`)
+                min_dist = dist
+                this.target = p.state.player_id
+            };
+        };
+        // Now set the target
+        console.log(`target: ${this.target}`)
+        return
+        this.target = potential_target
     }
 
     // Set new vx, vy based on relative direction of player.
