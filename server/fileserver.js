@@ -90,9 +90,8 @@ class NonPlayerCharacter {
             };
 
             var dist = Math.pow(
-                Math.pow(p.state.x - this.state.x, 2) +
+                Math.sqrt(p.state.x - this.state.x, 2) +
                     Math.pow(p.state.y - this.state.y, 2),
-                0.5,
             );
 
             // Skip if distance too big
@@ -115,7 +114,7 @@ class NonPlayerCharacter {
         const dx = target.state.x - this.state.x;
 
         const speed_fact =
-            speed / Math.pow(Math.pow(dy, 2) + Math.pow(dx, 2), 0.5);
+            speed / Math.sqrt(Math.pow(dy, 2) + Math.pow(dx, 2));
 
         this.state.vx = dx * speed_fact;
         this.state.vy = dy * speed_fact;
