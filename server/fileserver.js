@@ -53,15 +53,35 @@ const server = http.createServer(requestHandler);
 
 const wss = new ws.WebSocketServer({ server });
 
+const players = {};
+
+  let currentId = 0;
+
+
 wss.on("connection", function connection(ws) {
     console.log("Websocket connected");
     ws.on("error", console.error);
 
     ws.on("message", function message(data) {
-        console.log("received: %s", data);
+      console.log("received: %s", data);
+      const update = JSON.parse(data);
+      players[update.player_id] = update.content;
+      broadcastExcept(ws, {
+        message: "player_udpate",
+        player_id: update.player_id,
+        content: update.content
+      })
     });
+    
 
-    ws.send("Welcome, traveler.");
+  player.Id = currentId;
+
+    ws.send(JSON.stringify({message: "Welcome, traveler.", player_id: player.Id} ));
+    ws.send(JSON.stringify({message: "other players"}, players))
+
+    currentId + 1;
+
+    
 });
 
 server.listen(PORT);
