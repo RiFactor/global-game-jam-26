@@ -106,6 +106,7 @@ class Character {
         this.draw_state = DrawSate.STATIONARY;
         this.anim_frame = 0;
         this.frame_delay = 100;
+        this.player_id = null;
     }
 
     // Draw the sprite.
@@ -206,6 +207,7 @@ class Character {
         this.draw_state = new_state.draw_state;
         this.mask = new_state.mask;
         this.active = new_state.active;
+        this.player_id = new_state.player_id;
     }
 }
 
