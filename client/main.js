@@ -18,8 +18,10 @@ window.onload = () => {
         state.onResize();
     });
 
-    function drawCallback() {
-        state.draw();
+    var previous_time = 0;
+    function drawCallback(current_time) {
+        state.draw(current_time - previous_time);
+        previous_time = current_time;
         requestAnimationFrame(drawCallback);
     }
 
