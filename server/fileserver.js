@@ -63,6 +63,48 @@ class CharacterState {
 class NonPlayerCharacter {
     constructor() {
         this.state = new CharacterState();
+        this.target = undefined
+        // Search radius in game units
+        this.search_radius = 1000
+    }
+
+    // Look for a target player in range
+    setTarget(players) {
+        if (players.length < 1) {
+            return
+        };
+
+        // Iterate over players until found one in range, set them as target
+        var dists = new Array();
+        for (var p of players) {
+            // skip if wrong mask (ignore for now)
+            // TODO: uncomment
+            // if (p.state.mask != this.state.mask) {
+            //     continue
+            // };
+
+            var dist = Math.pow((Math.pow(p.state.x - this.state.x, 2) + Math.pow(p.state.y - this.state.y, 2)), 0.5)
+            
+            // Skip if distance too big
+            if (dist > this.search_radius) {
+                continue
+            };
+
+            // Set target
+            this.target = p.state.player_id
+            return
+        };
+    }
+
+    // Set new vx, vy based on relative direction of player
+    updateVelocity(target, speed=0.5) {
+        const dy = target.state.y - this.state.y
+        const dx = target.state.x - this.state.x
+
+        const speed_fact = speed / (Math.pow((Math.pow(dy, 2) + Math.pow(dx, 2)), 0.5))
+
+        this.state.vx = dx * speed_fact
+        this.state.vy = dy * speed_fact
     }
 }
 
@@ -136,6 +178,10 @@ class ServerState {
 
     updateNPCs(dt) {
         this.npcs.forEach((c) => {
+            c.setTarget(this.players)
+            if (c.target !== undefined) {
+                c.updateVelocity(this.players.filter((p) => c.target == p.state.player_id)[0])
+            };
             c.state.x += c.state.vx * dt;
             c.state.y += c.state.vy * dt;
         });
