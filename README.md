@@ -26,7 +26,7 @@ or build it yourself.
 
 
 
-## <a><img src="https://www.docker.com/app/uploads/2024/02/cropped-docker-logo-favicon-180x180.png" width="50"/></a> Docker
+## <a><img src="https://www.docker.com/app/uploads/2024/02/cropped-docker-logo-favicon-180x180.png" width="45"/></a> Docker
 ```
 docker compose up
 ```
