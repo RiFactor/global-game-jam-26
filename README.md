@@ -1,4 +1,4 @@
-# <a><img src="client/assets/player/front1.png" width="45"/></a> global-game-jam-26 ![](client/assets/player/front1.png)
+# <a><img src="client/assets/player/front1.png" width="45"/></a> global-game-jam-26
 
 ```
 +--------------------------------------------------------------------------------+
