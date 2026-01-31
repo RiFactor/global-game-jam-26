@@ -2,7 +2,7 @@
 import { Connection } from "./client.js";
 import { URI } from "./config.js";
 import { State } from "./state.js";
-import { isMobile, addDpadToScreen } from "./mobile.js";
+import { isMobile, addDpadToScreen, addActionsButtonsToScreen} from "./mobile.js";
 
 window.onload = () => {
     document.addEventListener("dblclick", function(e) {
@@ -19,7 +19,16 @@ window.onload = () => {
     var state = new State(canvas, connection);
 
     if (isMobile()) {
+        
+        const canvas = document.getElementById("canvas");
+        // Example: make canvas fill most of the viewport
+        canvas.style.width = "98vw";
+        canvas.style.height = "40vh";
+        canvas.width = window.innerWidth * 0.98;
+        canvas.height = window.innerHeight * 0.3;
+
         addDpadToScreen(state);
+        addActionsButtonsToScreen(state);
     }
 
     // Hook up the key event listener
