@@ -152,6 +152,7 @@ function drawBackground(viewport, asset_bank) {
                 x + 96,
                 y + 96,
             );
+            addGithubLink(canvas);
         },
         0,
         0,
@@ -216,5 +217,30 @@ export class ViewPort {
 
         this.x += this.speed_multiplier * move_x * dt * vx;
         this.y += this.speed_multiplier * move_y * dt * vy;
+    }
+}
+
+function addGithubLink(canvas) {
+    if (!document.getElementById("github-logo-link")) {
+        const link = document.createElement("a");
+        link.id = "github-logo-link";
+        link.href = "https://github.com/RiFactor/global-game-jam-26";
+        link.textContent = "View on GITHUB";
+        link.target = "_blank";
+        link.style.margin = "10px 10px 10px 10px";
+        link.style.background = "#c2c0bc";
+        link.style.borderRadius = "999px/48px";
+        link.style.border = "4px solid #333";
+        link.style.boxShadow = "0 4px 16px rgba(0,0,0,0.18)";
+        link.style.textDecoration = "none";
+        link.style.color = "#333";
+        link.style.fontWeight = "bold";
+        link.style.fontSize = "1.2em";
+        link.style.letterSpacing = "0.1em";
+        link.style.fontFamily = "'Consolas', 'monospace'";
+        link.style.textAlign = "center";
+        link.style.fontStyle = "italic";
+        // Insert after canvas
+        canvas.parentNode.insertBefore(link, canvas.nextSibling);
     }
 }
