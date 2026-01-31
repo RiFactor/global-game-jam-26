@@ -17,7 +17,7 @@
 <td>
   
 <a href="https://github.com/RiFactor/global-game-jam-26"> <!-- TODO update with actual game link -->
-  <img src="https://github.com/user-attachments/assets/b3bc6f77-ff31-4271-a9ed-7ee6829654ce" width="800" /> <!-- TODO update with actual gameplay gif -->
+  <img src="client/assets/gameplay/mobile.gif" width="800" />
 </a>
   
 </pre>
