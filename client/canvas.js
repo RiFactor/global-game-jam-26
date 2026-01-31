@@ -206,16 +206,12 @@ export class ViewPort {
         const X = x - this.x;
         const Y = y - this.y;
 
-        if (X < this.move_zone) {
-            move_x += -this._xSign(x);
-        } else if (X > this.width - this.move_zone - 96) {
-            move_x += this._xSign(x);
+        if ((X < this.move_zone) || (X > this.width - this.move_zone - 96)) {
+            move_x += 1;
         }
 
-        if (Y < this.move_zone) {
-            move_y += -this._ySign(y);
-        } else if (Y > this.height - this.move_zone - 96) {
-            move_y += this._ySign(y);
+        if ((Y < this.move_zone) || (Y > this.height - this.move_zone - 96)) {
+            move_y += 1;
         }
 
         this.x += this.speed_multiplier * move_x * dt * vx;
