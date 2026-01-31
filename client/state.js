@@ -1,5 +1,5 @@
 "use strict";
-import { AssetDeck, onResize, GameMap, ViewPort } from "./canvas.js";
+import { AssetDeck, onResize, GameMap, ViewPort, HUD } from "./canvas.js";
 
 import * as config from "./config.js";
 import {
@@ -18,6 +18,7 @@ class State {
         this.vx = 0;
         this.vy = 0;
         this.orientation = 0;
+        this.mask = 0;
         // Save the passed canvas
         this._main_canvas = canvas;
         this._main_canvas.ctx = canvas.getContext("2d");
@@ -32,6 +33,7 @@ class State {
         this.player = null;
 
         this.game_map = new GameMap();
+        this.hud = new HUD();
 
         // This controls where on the map we are drawing things
         this.viewport = new ViewPort(this.canvas);
@@ -55,16 +57,28 @@ class State {
 
     // Entry point to start the game
     async start() {
-        const character_sprites = await loadPlayerSprites(this.assets);
-        const enemy_sprites = await loadPlayerSprites(this.assets, {
-            character: "enemy",
-            tint_key: "arlecchino",
-        });
-        const character_masks = await loadAllMaskSprites(this.assets);
-        const enemy_masks = await loadAllMaskSprites(this.assets, {
-            character: "enemy",
-            mask_name: "arlecchino",
-        });
+        const all_assets = await Promise.all([
+            loadPlayerSprites(this.assets),
+            loadPlayerSprites(this.assets, {
+                character: "enemy",
+                tint_key: "arlecchino",
+            }),
+            loadAllMaskSprites(this.assets),
+            loadAllMaskSprites(this.assets, {
+                character: "enemy",
+                mask_name: "arlecchino",
+            }),
+        ]);
+        const character_sprites = all_assets[0];
+        const enemy_sprites = all_assets[1];
+        const character_masks = all_assets[2];
+        const enemy_masks = all_assets[3];
+
+        const map_index = await this.assets.fetchFile(
+            "/assets/maps/asscii-map1.txt",
+        );
+        // set and load the game map
+        this.game_map.setMap(this.assets.file_buffer[map_index]);
 
         this.addCharacter = () => {
             this.characters.push(new Character(enemy_sprites, enemy_masks));
@@ -95,6 +109,7 @@ class State {
         if (message.player_id !== undefined) {
             console.log(`Player ID set to ${message.player_id}`);
             this.player_id = message.player_id;
+            this.player.player_id = message.player_id;
             return;
         }
 
@@ -155,6 +170,7 @@ class State {
             this.player.vy,
         );
         this.game_map.draw(dt, this.viewport, this.assets);
+
         this.player.draw(dt, this.viewport, this.assets);
         this.other_players.forEach((c) => {
             if (c.active) {
@@ -164,6 +180,13 @@ class State {
         this.characters.forEach((c) => {
             c.draw(dt, this.viewport, this.assets);
         });
+        this.hud.draw(
+            dt,
+            this.viewport,
+            this.assets,
+            this.player,
+            this.other_players,
+        );
     }
 
     // This triggers as a callback.
@@ -220,18 +243,31 @@ class State {
     }
 
     update(dt) {
-        // game logic goes here
-        this.characters.forEach((c) => {
-            c.update(dt);
-        });
-
-        this.player.update(
-            dt,
+        this.player.updateKeys(
             this.key_up,
             this.key_down,
             this.key_left,
             this.key_right,
         );
+
+        // check collisions with geometry
+        this.game_map.collide(this.player);
+
+        this.characters.forEach((c) => {
+            c.update(dt);
+            const collide = c.collision_box.collide(
+                c.x,
+                c.y,
+                this.player.collision_box,
+                this.player.x,
+                this.player.y,
+            );
+            if (collide !== null) {
+                console.log("Hello World");
+            }
+        });
+
+        this.player.update(dt);
 
         // After updating the movement, send updated position to server
         this.conn.send(this.player);

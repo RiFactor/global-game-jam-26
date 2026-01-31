@@ -1,11 +1,13 @@
 import * as config from "./config.js";
 import * as utils from "./utils.js";
+import { CollisionBox } from "./collision.js";
 
 // Used for storing all the assets that we need to include (sprites and audio).
 export class AssetDeck {
     constructor() {
         this.sprite_buffer = new Array();
         this.audio_buffer = new Array();
+        this.file_buffer = new Array();
         this.tint_buffer = new Map();
     }
 
@@ -89,10 +91,25 @@ export class AssetDeck {
             audio.onload = () => {
                 console.log(`Asset fetched: ${uri}`);
                 this.audio_buffer.push(audio);
-                const index = this.audio_buffer.length;
+                const index = this.audio_buffer.length - 1;
                 resolve(index);
             };
             audio.onerror = err;
+        });
+    }
+
+    // Fetch a file as text.
+    fetchFile(uri) {
+        return new Promise((resolve, err) => {
+            fetch(uri)
+                .then((response) => {
+                    return response.text();
+                })
+                .then((text) => {
+                    this.file_buffer.push(text);
+                    const index = this.file_buffer.length - 1;
+                    resolve(index);
+                });
         });
     }
 
@@ -107,10 +124,8 @@ export class AssetDeck {
     }
 }
 
-function ChessboardPattern(ctx, canvas, asset_bank, x, y) {
-    const squareSize = 48;
-    const rows = 100;
-    const cols = 100;
+function ChessboardPattern(ctx, canvas, asset_bank, rows, cols, x, y) {
+    const squareSize = config.TILE_SIZE;
 
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
@@ -129,9 +144,33 @@ function ChessboardPattern(ctx, canvas, asset_bank, x, y) {
     }
 }
 
-function renderText(ctx, color, font = "30px Arial", text, x, y) {
+function renderHUDMask(ctx, player, asset_bank, x, y) {
+    const maskImage = asset_bank.getSprite(
+        player.mask_frames[0][1], // TODO: first index need to become dymanic once we have mask -player tracking
+    );
+    var size = 30;
+    ctx.drawImage(maskImage, x, y - size / 2, size, size);
+}
+
+function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
+    renderHUDMask(ctx, player, asset_bank, x, y);
+    renderText(
+        canvas.ctx,
+        "black",
+        "20px Arial",
+        "player: " + player.player_id,
+        x + 40,
+        y,
+        bold,
+    );
+}
+
+function renderText(ctx, color, font = "30px Arial", text, x, y, bold) {
     ctx.font = font;
     ctx.fillStyle = color;
+    if (bold) {
+        ctx.font = "bold " + font;
+    }
     ctx.fillText(text, x, y);
 }
 
@@ -140,29 +179,189 @@ export function onResize(canvas) {
     canvas.height = 600;
 }
 
-function drawBackground(viewport, asset_bank) {
+function drawBackground(viewport, asset_bank, rows, cols) {
     viewport.draw(
         (canvas, x, y) => {
-            ChessboardPattern(canvas.ctx, canvas, asset_bank, x, y);
-            renderText(
-                canvas.ctx,
-                "red",
-                "50px Arial",
-                "Welcome to our lil game, you can control the lil guy with lil WASD keys!",
-                x + 96,
-                y + 96,
-            );
+            ChessboardPattern(canvas.ctx, canvas, asset_bank, rows, cols, x, y);
+            addGithubLink(canvas);
         },
         0,
         0,
     );
 }
 
+// HUD
+function drawForeground(viewport, asset_bank, player, other_players) {
+    viewport.draw(
+        (canvas) => {
+            // important info
+            // players are never deleted so the length of other_players will never decrease
+            // when a player leaves/ disconnects, they re enter a new player
+            // to tell is a player is active, they have a draw state of 1, deactive is 0
+
+            const activeplayers = other_players.filter((p) => p.active == true);
+
+            var leftPadding = 5;
+            var topPadding = 25;
+
+            renderPlayerStats(
+                canvas.ctx,
+                player,
+                leftPadding,
+                topPadding,
+                true,
+                asset_bank,
+            );
+
+            for (let i = 0; i < activeplayers.length; i++) {
+                renderPlayerStats(
+                    canvas.ctx,
+                    activeplayers[i],
+                    leftPadding,
+                    topPadding + (i + 1) * topPadding,
+                    false,
+                    asset_bank,
+                );
+            }
+        },
+        0,
+        0,
+    );
+}
+
+class Structure {
+    constructor(x, y, width, height) {
+        this.x = x;
+        this.y = y;
+        this.collision_box = new CollisionBox(width, height);
+    }
+
+    draw(canvas, x, y) {
+        canvas.ctx.fillStyle = "black";
+        canvas.ctx.fillRect(
+            x,
+            y,
+            this.collision_box.width,
+            this.collision_box.height,
+        );
+    }
+}
+
 export class GameMap {
+    constructor() {
+        this.x_size = 0;
+        this.y_size = 0;
+        // TODO: make this a constant in the config
+        this.tile_size = config.TILE_SIZE;
+        this.structures = new Array();
+    }
+
+    draw(dt, viewport, asset_deck) {
+        drawBackground(viewport, asset_deck, this.x_size, this.y_size);
+        this.structures.forEach((s) => {
+            viewport.draw(
+                (canvas, x, y) => {
+                    s.draw(canvas, x, y);
+                    if (config.DRAW_COLLISION) {
+                        s.collision_box.draw(canvas, x, y);
+                    }
+                },
+                s.x,
+                s.y,
+            );
+        });
+    }
+
+    _setBoundaries() {
+        // left bar
+        this.structures.push(
+            new Structure(0, 0, this.tile_size, this.y_size * this.tile_size),
+        );
+        // top bar
+        this.structures.push(
+            new Structure(0, 0, this.x_size * this.tile_size, this.tile_size),
+        );
+        // right bar
+        this.structures.push(
+            new Structure(
+                (this.x_size - 1) * this.tile_size,
+                0,
+                this.tile_size,
+                this.y_size * this.tile_size,
+            ),
+        );
+        // bottom bar
+        this.structures.push(
+            new Structure(
+                0,
+                (this.y_size - 1) * this.tile_size,
+                this.x_size * this.tile_size,
+                this.tile_size,
+            ),
+        );
+    }
+
+    setMap(ascii_map) {
+        const matrix = utils.textToMatrix(ascii_map);
+        this.y_size = matrix.length;
+        if (this.y_size > 0) {
+            this.x_size = matrix[0].length;
+        }
+
+        // for each row
+        matrix.forEach((row, j) => {
+            const y_offset = j * this.tile_size;
+            row.forEach((cell, i) => {
+                const x_offset = i * this.tile_size;
+
+                if (cell == "1") {
+                    this.structures.push(
+                        new Structure(
+                            x_offset,
+                            y_offset,
+                            this.tile_size,
+                            this.tile_size,
+                        ),
+                    );
+                }
+            });
+        });
+
+        console.log(matrix);
+        this._setBoundaries();
+    }
+
+    // Check for collisions with a character
+    collide(character) {
+        this.structures.forEach((s) => {
+            const collision = s.collision_box.collide(
+                s.x,
+                s.y,
+                character.collision_box,
+                character.x,
+                character.y,
+            );
+            if (collision !== null) {
+                const update = s.collision_box.determineUpdate(
+                    collision,
+                    character.collision_box,
+                    character.vx,
+                    character.vy,
+                );
+                character.vx *= update.vx;
+                character.vy *= update.vy;
+                character.x += update.dx;
+                character.y += update.dy;
+            }
+        });
+    }
+}
+
+export class HUD {
     constructor() {}
 
-    draw(dt, canvas, asset_deck) {
-        drawBackground(canvas, asset_deck);
+    draw(dt, viewport, asset_deck, player, other_players) {
+        drawForeground(viewport, asset_deck, player, other_players);
     }
 }
 
@@ -206,15 +405,49 @@ export class ViewPort {
         const X = x - this.x;
         const Y = y - this.y;
 
-        if (X < this.move_zone || X > this.width - this.move_zone - 96) {
+        if (X < this.move_zone) {
+            move_x -= 1;
+        } else if (X > this.width - this.move_zone - 96) {
             move_x += 1;
         }
 
-        if (Y < this.move_zone || Y > this.height - this.move_zone - 96) {
+        if (Y < this.move_zone) {
+            move_y -= 1;
+        } else if (Y > this.height - this.move_zone - 96) {
             move_y += 1;
         }
 
-        this.x += this.speed_multiplier * move_x * dt * vx;
-        this.y += this.speed_multiplier * move_y * dt * vy;
+        this.x += this.speed_multiplier * move_x * dt * Math.abs(vx);
+        this.y += this.speed_multiplier * move_y * dt * Math.abs(vy);
+
+        // Clip to the size of the world
+        this.x = Math.max(0, this.x);
+        this.y = Math.max(0, this.y);
+    }
+}
+
+function addGithubLink(canvas) {
+    if (!document.getElementById("github-logo-link")) {
+        const link = document.createElement("a");
+        link.id = "github-logo-link";
+        link.href = "https://github.com/RiFactor/global-game-jam-26";
+        link.textContent = "View on GITHUB";
+        link.target = "_blank";
+        link.style.margin = "10px 10px 10px 10px";
+        link.style.background = "#c2c0bc";
+        link.style.borderRadius = "999px/48px";
+        link.style.border = "4px solid #333";
+        link.style.boxShadow = "0 4px 16px rgba(0,0,0,0.18)";
+        link.style.textDecoration = "none";
+        link.style.color = "#333";
+        link.style.fontWeight = "bold";
+        link.style.fontSize = "1.2em";
+        link.style.letterSpacing = "0.1em";
+        link.style.fontFamily = "'Consolas', 'monospace'";
+        link.style.textAlign = "center";
+        link.style.fontStyle = "italic";
+        link.style.userSelect = "none";
+        // Insert after canvas
+        canvas.parentNode.insertBefore(link, canvas.nextSibling);
     }
 }

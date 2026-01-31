@@ -1,5 +1,6 @@
 import * as config from "./config.js";
 import * as utils from "./utils.js";
+import * as collision from "./collision.js";
 
 // An immutable enumeration representing the directions that a character can be
 // facing / moving.
@@ -99,6 +100,7 @@ class Character {
         this.width = 96;
         this.height = 96;
         this.sprite_frames = sprite_frames;
+        this.mask = 0;
         this.mask_frames = mask_frames;
         // Orientation is the same as Facing
         this.orientation = Facing.DOWN;
@@ -109,6 +111,13 @@ class Character {
         this.anim_frame = 0;
         this.frame_delay = 100;
         this.mask = 0;
+        this.player_id = null;
+
+        this.collision_box = new collision.CollisionBox(
+            this.width - 20,
+            this.height,
+            10,
+        );
     }
 
     // Draw the sprite.
@@ -140,6 +149,9 @@ class Character {
             (canvas, x, y) => {
                 canvas.ctx.drawImage(frame, x, y, this.width, this.height);
                 canvas.ctx.drawImage(mask_frame, x, y, this.width, this.height);
+                if (config.DRAW_COLLISION) {
+                    this.collision_box.draw(canvas, x, y);
+                }
             },
             this.x,
             this.y,
@@ -158,8 +170,13 @@ class Character {
         this.mask == this.count ? (this.mask = 0) : (this.mask += 1);
     }
 
+    update(dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+    }
+
     // Called once per loop. Updates all logic and position of the Character.
-    update(dt, up, down, left, right) {
+    updateKeys(up, down, left, right) {
         // work out which direction the player is moving
         // console.log(this.mask);
         var vx = 0;
@@ -178,8 +195,6 @@ class Character {
         }
 
         this.setMovement(vx, vy);
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
     }
 
     // Given a `facing` direction, move the character that way.
@@ -222,6 +237,7 @@ class Character {
         this.draw_state = new_state.draw_state;
         this.mask = new_state.mask;
         this.active = new_state.active;
+        this.player_id = new_state.player_id;
     }
 }
 
