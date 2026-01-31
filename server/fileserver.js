@@ -24,6 +24,15 @@ const MIME_TYPES = {
 const STATIC_PATH = path.join(process.cwd(), "client");
 const toBool = [() => true, () => false];
 
+// An immutable enumeration representing the directions that a character can be
+// facing / moving.
+const Facing = Object.freeze({
+    UP: 0,
+    DOWN: 1,
+    LEFT: 2,
+    RIGHT: 3,
+});
+
 // Translates a url path to a file name.
 function lookupPath(url_path) {
     if (url_path == "/") return "index.html";
@@ -182,6 +191,34 @@ class NonPlayerCharacter {
             this.state.vx = this.state.vx + gaussianRandom(0, 0.001);
             this.state.vy = this.state.vy + gaussianRandom(0, 0.001);
         }
+
+        // Choose facing direction based on vx, vy
+        const angle = Math.atan2(this.state.vx, this.state.vy)
+        // up: pi, right: pi/2, down: 0, left: -pi/2, 
+
+        // Facing up
+        if (Math.abs(angle) >= (3*Math.PI/4)) {
+            console.log("UP")
+            this.state.orientation = Facing.UP
+        }
+        // Left
+        else if (-Math.PI/4 >= angle && angle > -3*Math.PI/4) {
+            console.log("LEFT")
+            this.state.orientation = Facing.LEFT
+        }
+        // Down
+        else if (-Math.PI/4 < angle && angle < Math.PI/4) {
+            console.log("DOWN")
+            this.state.orientation = Facing.DOWN
+        }
+        // Right
+        else if (Math.PI/4 <= angle && angle < 3*Math.PI/4) {
+            console.log("RIGHt")
+            this.state.orientation = Facing.RIGHT
+        };
+
+        console.log(`Orientation: ${this.state.orientation}, angle: ${angle}`)
+
     }
 }
 
@@ -221,6 +258,7 @@ class ServerState {
         npc.state.vx = (Math.random() - 0.5) * 0.1;
         npc.state.vy = (Math.random() - 0.5) * 0.1;
         npc.speed *= gaussianRandom(1.0, 0.1);
+        npc.state.draw_state = 1
 
         // HACK: adding some slight randomness to npc start position to avoid div by 0 issues later
         npc.state.x =
