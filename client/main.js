@@ -2,13 +2,25 @@
 import { Connection } from "./client.js";
 import { URI } from "./config.js";
 import { State } from "./state.js";
+import { isMobile, addDpadToScreen } from "./mobile.js";
 
 window.onload = () => {
+    document.addEventListener("dblclick", function(e) {
+        e.preventDefault();
+    });
+
+    const mobile = isMobile();
+    console.log(mobile);
+
     // Set up coonection to server
     const connection = new Connection(URI);
 
     const canvas = document.getElementById("canvas");
     var state = new State(canvas, connection);
+
+if (isMobile()) {
+    addDpadToScreen(state);
+}
 
     // Hook up the key event listener
     document.addEventListener("keyup", (e) => {
