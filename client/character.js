@@ -103,26 +103,29 @@ class Character {
 
         this.timer = 0;
         this.draw_state = DrawSate.STATIONARY;
+        this.anim_frame = 0;
+        this.frame_delay = 100;
     }
 
     // Draw the sprite.
     draw(dt, viewport, asset_deck) {
         this.timer += dt;
 
-        var anim_frame = 0;
-
         if (this.draw_state == DrawSate.MOVING) {
-            anim_frame = Math.floor(this.timer / 100);
-            if (anim_frame >= 3) {
+            if (Math.floor(this.timer / this.frame_delay) > 1) {
                 this.timer = 0;
-                anim_frame = 3;
+                this.anim_frame += 1;
+            }
+            if (this.anim_frame > 3) {
+                this.anim_frame = 0;
             }
         } else {
             this.timer = 0;
+            this.anim_frame = 0;
         }
 
         const frame_index =
-            this.sprite_frames[this.orientation * 4 + anim_frame];
+            this.sprite_frames[this.orientation * 4 + this.anim_frame];
         const frame = asset_deck.getSprite(frame_index);
 
         const mask_frame = asset_deck.getSprite(
