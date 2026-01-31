@@ -174,16 +174,14 @@ class Character {
         if (vy == 0) {
             if (vx > 0) {
                 this.orientation = Facing.RIGHT;
-            }
-            else {
+            } else {
                 this.orientation = Facing.LEFT;
             }
         }
         if (vx == 0) {
             if (vy > 0) {
                 this.orientation = Facing.DOWN;
-            }
-            else {
+            } else {
                 this.orientation = Facing.UP;
             }
         }
