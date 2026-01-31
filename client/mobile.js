@@ -33,6 +33,7 @@ export function addDpadToScreen(state) {
     // Up button
     const up = document.createElement("button");
     up.textContent = "▲";
+    up.style.fontSize = "24px";
     up.style.position = "absolute";
     up.style.left = "50%";
     up.style.top = "5%";
@@ -51,6 +52,7 @@ export function addDpadToScreen(state) {
     // Down button
     const down = document.createElement("button");
     down.textContent = "▼";
+    down.style.fontSize = "24px";
     down.style.position = "absolute";
     down.style.left = "50%";
     down.style.top = "55%";
@@ -69,6 +71,7 @@ export function addDpadToScreen(state) {
     // Left button
     const left = document.createElement("button");
     left.textContent = "◀";
+    left.style.fontSize = "18px";
     left.style.position = "absolute";
     left.style.left = "25%";
     left.style.top = "30%";
@@ -87,6 +90,7 @@ export function addDpadToScreen(state) {
     // Right button
     const right = document.createElement("button");
     right.textContent = "▶";
+    right.style.fontSize = "18px";
     right.style.position = "absolute";
     right.style.left = "75%";
     right.style.top = "30%";
