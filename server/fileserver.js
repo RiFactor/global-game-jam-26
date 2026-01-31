@@ -26,6 +26,14 @@ function lookupPath(url_path) {
     return url_path;
 }
 
+
+function gaussianRandom(mu, sigma) {
+    const u = 1 - Math.random();
+    const v = Math.random();
+    const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v)
+    return z * sigma + mu;
+}
+
 async function requestHandler(req, res) {
     if (req.url == "/ws") return; // it's already been upgraded
 
@@ -74,7 +82,7 @@ class NonPlayerCharacter {
             return
         };
 
-        // Iterate over players until found one in range, set them as target
+        // Iterate over players until an ACTIVE is found one in range, set them as target
         var dists = new Array();
         for (var p of players) {
             // skip if wrong mask (ignore for now)
@@ -91,13 +99,16 @@ class NonPlayerCharacter {
             };
 
             // Set target
-            this.target = p.state.player_id
-            return
+            if (p.state.active) {
+                this.target = p.state.player_id
+                return
+            }
         };
     }
 
-    // Set new vx, vy based on relative direction of player
-    updateVelocity(target, speed=0.5) {
+    // Set new vx, vy based on relative direction of player. 
+    // speed is slightly faster than players default move
+    updateVelocity(target, speed=0.165) {
         const dy = target.state.y - this.state.y
         const dx = target.state.x - this.state.x
 
@@ -105,6 +116,47 @@ class NonPlayerCharacter {
 
         this.state.vx = dx * speed_fact
         this.state.vy = dy * speed_fact
+    }
+
+    // Check that the target is still valid
+    checkTarget(target) {
+        // Mask check
+        if (target.state.mask != this.state.mask) {
+            this.target = undefined
+            return
+        };
+        
+        // Active check
+        if (!(target.state.active)) {
+            this.target = undefined
+            this.state.vx = this.state.vx * 0.1
+            this.state.vy = this.state.vy * 0.1
+            return
+        };
+    }
+
+    // Wrapper function for all the onstep updates
+    onstepUpdates(players) {
+        this.setTarget(players);
+
+        if (players.length == 0){
+            return
+        }
+
+        const target_player = players.filter((p) => this.target == p.state.player_id)[0]
+        if (this.target !== undefined) {
+            this.checkTarget(target_player)
+        };
+        
+        
+        if (this.target !== undefined) {
+            this.updateVelocity(target_player)
+        }
+        else {
+            // Drift in roughly the same direction as before
+            this.state.vx = (this.state.vx + gaussianRandom(0, 0.001))
+            this.state.vy = (this.state.vy + gaussianRandom(0, 0.001))
+        };
     }
 }
 
@@ -140,6 +192,10 @@ class ServerState {
         var npc = new NonPlayerCharacter();
         npc.state.vx = (Math.random() - 0.5) * 0.1;
         npc.state.vy = (Math.random() - 0.5) * 0.1;
+        
+        // HACK: adding some slight randomness to npc start position to avoid div by 0 issues later
+        npc.state.x = (Math.random() - 0.5) * 0.1;
+        npc.state.y = (Math.random() - 0.5) * 0.1;
         this.npcs.push(npc);
     }
 
@@ -178,10 +234,8 @@ class ServerState {
 
     updateNPCs(dt) {
         this.npcs.forEach((c) => {
-            c.setTarget(this.players)
-            if (c.target !== undefined) {
-                c.updateVelocity(this.players.filter((p) => c.target == p.state.player_id)[0])
-            };
+            c.onstepUpdates(this.players);
+
             c.state.x += c.state.vx * dt;
             c.state.y += c.state.vy * dt;
         });
