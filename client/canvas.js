@@ -100,7 +100,7 @@ function clearCanvas(ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-function ChessboardPattern(ctx, canvas) {
+function ChessboardPattern(ctx, canvas, asset_bank) {
     const squareSize = 50;
     const rows = Math.ceil(canvas.height / squareSize);
     const cols = Math.ceil(canvas.width / squareSize);
@@ -108,9 +108,9 @@ function ChessboardPattern(ctx, canvas) {
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
             if ((row + col) % 2 === 0) {
-                ctx.fillStyle = "black";
+                ctx.fillStyle = asset_bank.getOrCreateTint("black");
             } else {
-                ctx.fillStyle = "white";
+                ctx.fillStyle = asset_bank.getOrCreateTint("white");
             }
             ctx.fillRect(
                 col * squareSize,
@@ -139,7 +139,7 @@ export function initializeCanvas(canvas) {
 }
 
 export function drawBackground(canvas, asset_bank) {
-    ChessboardPattern(canvas.ctx, canvas);
+    ChessboardPattern(canvas.ctx, canvas, asset_bank);
     renderText(
         canvas.ctx,
         asset_bank.getOrCreateTint("text"),
