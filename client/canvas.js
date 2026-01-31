@@ -1,5 +1,6 @@
 import * as config from "./config.js";
 import * as utils from "./utils.js";
+import { CollisionBox } from "./collision.js";
 
 // Used for storing all the assets that we need to include (sprites and audio).
 export class AssetDeck {
@@ -107,10 +108,8 @@ export class AssetDeck {
     }
 }
 
-function ChessboardPattern(ctx, canvas, asset_bank, x, y) {
+function ChessboardPattern(ctx, canvas, asset_bank, rows, cols, x, y) {
     const squareSize = 48;
-    const rows = 100;
-    const cols = 100;
 
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
@@ -140,10 +139,10 @@ export function onResize(canvas) {
     canvas.height = 600;
 }
 
-function drawBackground(viewport, asset_bank) {
+function drawBackground(viewport, asset_bank, rows, cols) {
     viewport.draw(
         (canvas, x, y) => {
-            ChessboardPattern(canvas.ctx, canvas, asset_bank, x, y);
+            ChessboardPattern(canvas.ctx, canvas, asset_bank, rows, cols, x, y);
             renderText(
                 canvas.ctx,
                 "red",
@@ -158,11 +157,59 @@ function drawBackground(viewport, asset_bank) {
     );
 }
 
-export class GameMap {
-    constructor() {}
+class Structure {
+    constructor(x, y, width, height) {
+        this.x = x;
+        this.y = y;
+        this.collision_box = new CollisionBox(width, height);
+    }
+}
 
-    draw(dt, canvas, asset_deck) {
-        drawBackground(canvas, asset_deck);
+export class GameMap {
+    constructor() {
+        this.x_size = 64;
+        this.y_size = 64;
+
+        this.structures = new Array();
+        this.structures.push(new Structure(0, 0, 50, this.y_size * 50));
+        this.structures.push(new Structure(0, 0, this.x_size * 50, 50));
+
+        this.structures.push(new Structure(500, 0, 50, 500));
+        this.structures.push(new Structure(0, 500, 500, 50));
+    }
+
+    draw(dt, viewport, asset_deck) {
+        drawBackground(viewport, asset_deck, this.x_size, this.y_size);
+        if (config.DRAW_COLLISION) {
+            this.structures.forEach((s) => {
+                s.collision_box.draw(viewport.canvas, s.x, s.y);
+            });
+        }
+    }
+
+    // Check for collisions with a character
+    collide(character) {
+        this.structures.forEach((s) => {
+            const collision = s.collision_box.collide(
+                s.x,
+                s.y,
+                character.collision_box,
+                character.x,
+                character.y,
+            );
+            if (collision !== null) {
+                const update = s.collision_box.determineUpdate(
+                    collision,
+                    character.collision_box,
+                    character.vx,
+                    character.vy,
+                );
+                character.vx *= update.vx;
+                character.vy *= update.vy;
+                character.x += update.dx;
+                character.y += update.dy;
+            }
+        });
     }
 }
 
@@ -206,15 +253,23 @@ export class ViewPort {
         const X = x - this.x;
         const Y = y - this.y;
 
-        if (X < this.move_zone || X > this.width - this.move_zone - 96) {
+        if (X < this.move_zone) {
+            move_x -= 1;
+        } else if (X > this.width - this.move_zone - 96) {
             move_x += 1;
         }
 
-        if (Y < this.move_zone || Y > this.height - this.move_zone - 96) {
+        if (Y < this.move_zone) {
+            move_y -= 1;
+        } else if (Y > this.height - this.move_zone - 96) {
             move_y += 1;
         }
 
-        this.x += this.speed_multiplier * move_x * dt * vx;
-        this.y += this.speed_multiplier * move_y * dt * vy;
+        this.x += this.speed_multiplier * move_x * dt * Math.abs(vx);
+        this.y += this.speed_multiplier * move_y * dt * Math.abs(vy);
+
+        // Clip to the size of the world
+        this.x = Math.max(0, this.x);
+        this.y = Math.max(0, this.y);
     }
 }

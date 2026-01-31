@@ -208,18 +208,31 @@ class State {
     }
 
     update(dt) {
-        // game logic goes here
-        this.characters.forEach((c) => {
-            c.update(dt);
-        });
-
-        this.player.update(
-            dt,
+        this.player.updateKeys(
             this.key_up,
             this.key_down,
             this.key_left,
             this.key_right,
         );
+
+        // check collisions with geometry
+        this.game_map.collide(this.player);
+
+        this.characters.forEach((c) => {
+            c.update(dt);
+            const collide = c.collision_box.collide(
+                c.x,
+                c.y,
+                this.player.collision_box,
+                this.player.x,
+                this.player.y,
+            );
+            if (collide !== null) {
+                console.log("Hello World");
+            }
+        });
+
+        this.player.update(dt);
 
         // After updating the movement, send updated position to server
         this.conn.send(this.player);

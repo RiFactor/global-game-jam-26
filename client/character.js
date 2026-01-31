@@ -1,5 +1,6 @@
 import * as config from "./config.js";
 import * as utils from "./utils.js";
+import * as collision from "./collision.js";
 
 // An immutable enumeration representing the directions that a character can be
 // facing / moving.
@@ -106,6 +107,12 @@ class Character {
         this.draw_state = DrawSate.STATIONARY;
         this.anim_frame = 0;
         this.frame_delay = 100;
+
+        this.collision_box = new collision.CollisionBox(
+            this.width - 20,
+            this.height,
+            10,
+        );
     }
 
     // Draw the sprite.
@@ -137,14 +144,22 @@ class Character {
             (canvas, x, y) => {
                 canvas.ctx.drawImage(frame, x, y, this.width, this.height);
                 canvas.ctx.drawImage(mask_frame, x, y, this.width, this.height);
+                if (config.DRAW_COLLISION) {
+                    this.collision_box.draw(canvas, x, y);
+                }
             },
             this.x,
             this.y,
         );
     }
 
+    update(dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+    }
+
     // Called once per loop. Updates all logic and position of the Character.
-    update(dt, up, down, left, right) {
+    updateKeys(up, down, left, right) {
         // work out which direction the player is moving
         var vx = 0;
         var vy = 0;
@@ -162,8 +177,6 @@ class Character {
         }
 
         this.setMovement(vx, vy);
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
     }
 
     // Given a `facing` direction, move the character that way.
