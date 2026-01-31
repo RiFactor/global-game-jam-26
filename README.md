@@ -16,7 +16,7 @@
 <tr>
 <td>
   
-<a href="https://shellywell123.github.io/Grind-Boy.gb/build/web/index.html"> <!-- TODO update with actual game link -->
+<a href="https://github.com/RiFactor/global-game-jam-26"> <!-- TODO update with actual game link -->
   <img src="https://www.nopcommerce.com/images/thumbs/0005720_coming-soon-page_550.jpeg" width="175" /> <!-- TODO update with actual gameplay gif -->
 </a>
   
@@ -32,7 +32,7 @@ Last man standing PvE multiplayer Web browser game, where the objective is to av
 
 ---
 
-Play the latest build [HERE](https://www.youtube.com/watch?v=Aq5WXmQQooo&list=RDAq5WXmQQooo&start_radio=1)!
+Play the latest build [HERE](https://www.youtube.com/watch?v=Aq5WXmQQooo&list=RDAq5WXmQQooo&start_radio=1)! <!-- TODO update with actual game link -->
 or build it yourself.
 
 
