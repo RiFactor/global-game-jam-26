@@ -108,7 +108,7 @@ export class AssetDeck {
 }
 
 function ChessboardPattern(ctx, canvas, asset_bank, x, y) {
-    const squareSize = 50;
+    const squareSize = 48;
     const rows = 100;
     const cols = 100;
 
@@ -149,8 +149,8 @@ function drawBackground(viewport, asset_bank) {
                 "red",
                 "50px Arial",
                 "Welcome to our lil game, you can control the lil guy with lil WASD keys!",
-                x + 100,
-                y + 100,
+                x + 96,
+                y + 96,
             );
         },
         0,
@@ -208,13 +208,13 @@ export class ViewPort {
 
         if (X < this.move_zone) {
             vx = -this._xSign(x);
-        } else if (X > this.width - this.move_zone - 100) {
+        } else if (X > this.width - this.move_zone - 96) {
             vx = this._xSign(x);
         }
 
         if (Y < this.move_zone) {
             vy = -this._ySign(y);
-        } else if (Y > this.height - this.move_zone - 100) {
+        } else if (Y > this.height - this.move_zone - 96) {
             vy = this._ySign(y);
         }
 
