@@ -151,7 +151,9 @@ class State {
         this.game_map.draw(dt, this.viewport, this.assets);
         this.player.draw(dt, this.viewport, this.assets);
         this.other_players.forEach((c) => {
-            c.draw(dt, this.viewport, this.assets);
+            if (c.active) {
+                c.draw(dt, this.viewport, this.assets);
+            }
         });
         this.characters.forEach((c) => {
             c.draw(dt, this.viewport, this.assets);

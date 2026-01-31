@@ -57,6 +57,7 @@ class CharacterState {
     orientation = 0;
     draw_state = 0;
     mask = 0;
+    active = true;
 }
 
 class NonPlayerCharacter {
@@ -105,13 +106,29 @@ class ServerState {
         const port = req.socket._peername.port;
 
         const player_id = `${ip}:${port}`;
-        const player = new PlayerHandler(socket, player_id);
-        this.players.push(player);
 
-        console.log(`Websocket connected from ${ip}:${port}`);
+        var player = undefined;
+        for (var p of this.players) {
+            if (p.state.player_id == player_id) {
+                player = p;
+                player.socket = socket;
+                console.log(`Player reconnected: ${player_id}`);
+                break;
+            }
+        }
 
-        socket.on("error", console.error);
+        if (player === undefined) {
+            player = new PlayerHandler(socket, player_id);
+            this.players.push(player);
+            console.log(`Websocket connected from ${ip}:${port}`);
+        }
+
         socket.on("message", (data) => player.handleMessage(data));
+        socket.on("error", console.error);
+        socket.on("close", () => {
+            console.log(`Player ${player_id} disconnected.`);
+            player.state.active = false;
+        });
 
         // Need to let the player known that their ID is
         socket.send(JSON.stringify({ player_id: player_id }));

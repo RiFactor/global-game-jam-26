@@ -100,6 +100,7 @@ class Character {
         this.mask_frames = mask_frames;
         // Orientation is the same as Facing
         this.orientation = Facing.DOWN;
+        this.active = true;
 
         this.timer = 0;
         this.draw_state = DrawSate.STATIONARY;
@@ -204,6 +205,7 @@ class Character {
         this.orientation = new_state.orientation;
         this.draw_state = new_state.draw_state;
         this.mask = new_state.mask;
+        this.active = new_state.active;
     }
 }
 
