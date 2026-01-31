@@ -85,7 +85,7 @@ class NonPlayerCharacter {
         this.state = new CharacterState();
         this.target = undefined;
         // Search radius in game units
-        this.search_radius = 1000;
+        this.search_radius = 500;
         this.speed = 0.165;
     }
 
@@ -198,22 +198,18 @@ class NonPlayerCharacter {
 
         // Facing up
         if (Math.abs(angle) >= (3 * Math.PI) / 4) {
-            console.log("UP");
             this.state.orientation = Facing.UP;
         }
         // Left
         else if (-Math.PI / 4 >= angle && angle > (-3 * Math.PI) / 4) {
-            console.log("LEFT");
             this.state.orientation = Facing.LEFT;
         }
         // Down
         else if (-Math.PI / 4 < angle && angle < Math.PI / 4) {
-            console.log("DOWN");
             this.state.orientation = Facing.DOWN;
         }
         // Right
         else if (Math.PI / 4 <= angle && angle < (3 * Math.PI) / 4) {
-            console.log("RIGHt");
             this.state.orientation = Facing.RIGHT;
         }
     }
