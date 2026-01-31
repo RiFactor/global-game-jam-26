@@ -220,6 +220,18 @@ class State {
                     this.player.orientation = Facing.DOWN;
                 }
                 break;
+            case "e":
+            case "E":
+                if (active) {
+                    this.player.nextMask();
+                }
+                break;
+            case "q":
+            case "Q":
+                if (active) {
+                    this.player.prevMask();
+                }
+                break;
             default:
                 console.log(e.key);
         }
