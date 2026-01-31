@@ -5,31 +5,31 @@ class Connection {
         this.wsUri = uri;
         this.websocket = new WebSocket(this.wsUri);
 
-        // Listen for errors and log (for now)
+        // Listen fo errors and log (for now)
         this.websocket.addEventListener("error", (e) => {
-            console.log(`ERROR: ${e}`)
-        })
+            console.log(`ERROR: ${e}`);
+        });
 
-        // this.websocket.addEventListener("message", (e) => {
-        //     console.log(`RECEIVED: ${e.data}: ${this.counter}`);
-        //     this.counter++;
-        // });
+        this.websocket.addEventListener("message", (e) => {
+            console.log(`RECEIVED: ${e.data}: ${counter}`);
+            counter++;
+        });
 
         // TODO: Get the connection ID from the server (somehow)
-        this.connection_id = 0
+        this.connection_id = 0;
     }
 
     // Keep pinging the server
     ping() {
         this.websocket.addEventListener("open", () => {
             console.log("CONNECTED");
-            var counter = 0
+            var counter = 0;
             const pingInterval = setInterval(() => {
                 console.log(`SENT: ping: ${counter}`);
-                counter += 1
+                counter += 1;
                 this.websocket.send("ping");
-            }, 1000)
-        })
+            }, 1000);
+        });
     }
 
     // Send the player's position to the server
@@ -41,13 +41,13 @@ class Connection {
                 y_pos: player.y,
                 orientation: player.orientation,
                 moving: player.drawstate,
-                mask: player.mask
-            }
-        }   
-        this.websocket.send(JSON.stringify(update))
+                mask: player.mask,
+            },
+        };
+        this.websocket.send(JSON.stringify(update));
     }
 }
 
-export { Connection }
-// when player moves, send updated position to server. send to everyone (and receive all of theirs) 
+export { Connection };
+// when player moves, send updated position to server. send to everyone (and receive all of theirs)
 // and draw all characters

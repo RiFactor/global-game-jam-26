@@ -1,3 +1,6 @@
+import * as config from "./config.js";
+import * as utils from "./utils.js";
+
 // Used for storing all the assets that we need to include (sprites and audio).
 export class AssetDeck {
     constructor() {
@@ -39,9 +42,10 @@ export class AssetDeck {
 
     // Gets or generates the fill tint for a given key.
     getOrCreateTint(tint_key) {
-        return this.tint_buffer.getOrInsertComputed(tint_key, (key) =>
-            this.randomTint(),
-        );
+        if (!this.tint_buffer.has(tint_key)) {
+            this.tint_buffer.set(tint_key, this.randomTint());
+        }
+        return this.tint_buffer.get(tint_key);
     }
 
     // Preload an image. Example usage is
@@ -103,10 +107,10 @@ export class AssetDeck {
     }
 }
 
-function ChessboardPattern(ctx, canvas, asset_bank) {
+function ChessboardPattern(ctx, canvas, asset_bank, x, y) {
     const squareSize = 48;
-    const rows = Math.ceil(canvas.height / squareSize);
-    const cols = Math.ceil(canvas.width / squareSize);
+    const rows = 100;
+    const cols = 100;
 
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
@@ -116,8 +120,8 @@ function ChessboardPattern(ctx, canvas, asset_bank) {
                 ctx.fillStyle = asset_bank.getOrCreateTint("white");
             }
             ctx.fillRect(
-                col * squareSize,
-                row * squareSize,
+                col * squareSize + x,
+                row * squareSize + y,
                 squareSize,
                 squareSize,
             );
@@ -131,24 +135,93 @@ function renderText(ctx, color, font = "30px Arial", text, x, y) {
     ctx.fillText(text, x, y);
 }
 
-export function setCanvasSize(canvas) {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+export function onResize(canvas) {
+    canvas.width = 800;
+    canvas.height = 600;
 }
 
-export function initializeCanvas(canvas) {
-    const ctx = canvas.getContext("2d");
-    setCanvasSize(canvas);
-}
-
-export function drawBackground(canvas, asset_bank) {
-    ChessboardPattern(canvas.ctx, canvas, asset_bank);
-    renderText(
-        canvas.ctx,
-        asset_bank.getOrCreateTint("text"),
-        "50px Arial",
-        "Welcome to our lil game, you can control the lil guy with lil WASD keys!",
-        98,
-        98,
+function drawBackground(viewport, asset_bank) {
+    viewport.draw(
+        (canvas, x, y) => {
+            ChessboardPattern(canvas.ctx, canvas, asset_bank, x, y);
+            renderText(
+                canvas.ctx,
+                "red",
+                "50px Arial",
+                "Welcome to our lil game, you can control the lil guy with lil WASD keys!",
+                x + 96,
+                y + 96,
+            );
+        },
+        0,
+        0,
     );
+}
+
+export class GameMap {
+    constructor() {}
+
+    draw(dt, canvas, asset_deck) {
+        drawBackground(canvas, asset_deck);
+    }
+}
+
+export class ViewPort {
+    constructor(canvas) {
+        this.x = 0;
+        this.y = 0;
+
+        this.height = 600;
+        this.width = 800;
+        this.speed_multiplier = 2;
+
+        // How large zone should be where the camera starts to
+        // follow the player.
+        this.move_zone = 20;
+        this.canvas = canvas;
+    }
+
+    draw(callback, x, y) {
+        callback(this.canvas, x - this.x, y - this.y);
+    }
+
+    // Used to work out which horizontal direction the viewport needs to move
+    // given a target point `x`
+    _xSign(x) {
+        return Math.sign(x - this.x + this.width / 2);
+    }
+
+    // Used to work out which vertical direction the viewport needs to move
+    // given a target point `y`
+    _ySign(y) {
+        return Math.sign(y - this.y + this.height / 2);
+    }
+
+    // Center the viewport on a given point moving with a given speed.
+    follow(dt, x, y, speed) {
+        let vx = 0;
+        let vy = 0;
+
+        // translate to viewport coordinates
+        const X = x - this.x;
+        const Y = y - this.y;
+
+        if (X < this.move_zone) {
+            vx = -this._xSign(x);
+        } else if (X > this.width - this.move_zone - 96) {
+            vx = this._xSign(x);
+        }
+
+        if (Y < this.move_zone) {
+            vy = -this._ySign(y);
+        } else if (Y > this.height - this.move_zone - 96) {
+            vy = this._ySign(y);
+        }
+
+        const norm = utils.magnitude(vx, vy);
+        if (norm > 0) {
+            this.x += (this.speed_multiplier * vx * dt * speed) / norm;
+            this.y += (this.speed_multiplier * vy * dt * speed) / norm;
+        }
+    }
 }

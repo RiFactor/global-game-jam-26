@@ -5,7 +5,7 @@ import { State } from "./state.js";
 
 window.onload = () => {
     // Set up coonection to server
-    const connection = new Connection(URI)
+    const connection = new Connection(URI);
 
     const canvas = document.getElementById("canvas");
     var state = new State(canvas, connection);

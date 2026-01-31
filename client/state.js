@@ -1,10 +1,5 @@
 "use strict";
-import { AssetDeck, setCanvasSize, drawBackground } from "./canvas.js";
-
-// Define updateCanvas locally to avoid import errors
-function updateCanvas(canvas, x, y) {
-    drawBackground(canvas, x, y);
-}
+import { AssetDeck, onResize, GameMap, ViewPort } from "./canvas.js";
 
 import * as config from "./config.js";
 import {
@@ -33,8 +28,20 @@ class State {
         // The player controlled character
         this.player = null;
 
+        this.game_map = new GameMap();
+
+        // This controls where on the map we are drawing things
+        this.viewport = new ViewPort(this.canvas);
+
         // Associate the connection to the server
         this.conn = connection;
+
+        // To fix all the movement problems, store the key states and then work
+        // out the movement vectors during update.
+        this.key_up = false;
+        this.key_down = false;
+        this.key_left = false;
+        this.key_right = false;
     }
 
     // Entry point to start the game
@@ -52,58 +59,71 @@ class State {
         this.characters.push(new Character(enemy_sprites, enemy_masks));
 
         this.player = new Character(character_sprites, character_masks);
+        // This is just a placeholder calculation to center the player in the viewport
+        this.player.x = this.viewport.width / 2 - 50;
+        this.player.y = this.viewport.height / 2 - 50;
 
-        setCanvasSize(this.canvas);
+        onResize(this.canvas);
         console.log("Game ready");
     }
 
     // Drawing function. This is automatically called by
     // `requestAnimationFrame`.
     draw(dt) {
-        drawBackground(this.canvas, this.assets);
-
-        this.player.draw(dt, this.canvas, this.assets);
-
+        // TODO: have a long hard think about whether this should live in draw
+        // or update?
+        this.viewport.follow(
+            dt,
+            this.player.x,
+            this.player.y,
+            this.player.speed,
+        );
+        this.game_map.draw(dt, this.viewport, this.assets);
+        this.player.draw(dt, this.viewport, this.assets);
         this.characters.forEach((c) => {
-            c.draw(dt, this.canvas, this.assets);
+            c.draw(dt, this.viewport, this.assets);
         });
     }
 
     // This triggers as a callback.
     onKey(e, active) {
-        const updateMovement = (facing) => {
-            if (active) {
-                this.player.startMove(facing);
-            } else {
-                this.player.stopMove(facing);
-            }
-        };
-
         switch (e.key) {
             case "d":
-                updateMovement(Facing.RIGHT);
+            case "D":
+                this.key_right = active;
+                if (active) {
+                    this.player.orientation = Facing.RIGHT;
+                }
                 break;
             case "a":
-                updateMovement(Facing.LEFT);
+            case "A":
+                this.key_left = active;
+                if (active) {
+                    this.player.orientation = Facing.LEFT;
+                }
                 break;
             case "w":
-                updateMovement(Facing.UP);
+            case "W":
+                this.key_up = active;
+                if (active) {
+                    this.player.orientation = Facing.UP;
+                }
                 break;
             case "s":
-                updateMovement(Facing.DOWN);
+            case "S":
+                this.key_down = active;
+                if (active) {
+                    this.player.orientation = Facing.DOWN;
+                }
                 break;
             default:
                 console.log(e.key);
         }
-
-        // After updating the movement, send updated position to server
-        this.conn.send(this.player);
     }
 
     // Called whenever the window is resized.
     onResize() {
-        setCanvasSize(this.canvas);
-        updateCanvas(this.canvas, 0, 0);
+        onResize(this.canvas);
     }
 
     update(dt) {
@@ -111,7 +131,17 @@ class State {
         this.characters.forEach((c) => {
             c.update(dt);
         });
-        this.player.update(dt);
+
+        this.player.update(
+            dt,
+            this.key_up,
+            this.key_down,
+            this.key_left,
+            this.key_right,
+        );
+
+        // After updating the movement, send updated position to server
+        this.conn.send(this.player);
     }
 }
 
