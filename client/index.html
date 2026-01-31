@@ -4,8 +4,25 @@
         <meta charset="utf-8" />
         <title>Our Game</title>
         <script type="module" src="./main.js"></script>
+        <style>
+            html {
+                display: table;
+                margin: auto;
+            }
+            body {
+                background-color: powderblue;
+            }
+            canvas {
+                padding: 16px;
+                box-sizing: border-box;
+                image-rendering: pixelated;
+                display: block;
+                width: 800px;
+                height: 600px;
+            }
+        </style>
     </head>
     <body>
-        <canvas id="canvas" style="border: 1px solid black,imageSmoothingDisabled:true"></canvas>
+        <canvas id="canvas"></canvas>
     </body>
 </html>
