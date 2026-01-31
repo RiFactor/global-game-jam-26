@@ -21,7 +21,5 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: .github/workflows/Dockerfile
           push: true
           tags: shellywell123/our-game:latest
