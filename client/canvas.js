@@ -145,19 +145,20 @@ function ChessboardPattern(ctx, canvas, asset_bank, rows, cols, x, y) {
 }
 
 function renderPlayerStatsMask(ctx, player, asset_bank, x, y) {
-    const maskImage = asset_bank.getSprite(
-        player.mask_frames[0][1], // TODO: first index need to become dymanic once we have mask -player tracking
-    );
+    const maskImage = asset_bank.getSprite(player.mask_frames[player.mask][1]);
     var size = 30;
-    ctx.drawImage(maskImage, x, y -5- size / 2, size, size);
+    ctx.drawImage(maskImage, x, y - 5 - size / 2, size, size);
 }
 
 function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
     renderPlayerStatsMask(ctx, player, asset_bank, x, y);
 
-    var playerName = player.player_id && typeof player.player_id === "string" && player.player_id.includes('f:')
-        ? String(player.player_id.split('f:')[1])
-        : "";
+    var playerName =
+        player.player_id &&
+        typeof player.player_id === "string" &&
+        player.player_id.includes("f:")
+            ? String(player.player_id.split("f:")[1])
+            : "";
 
     renderText(
         canvas.ctx,
@@ -180,25 +181,24 @@ function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
 }
 
 function renderStatusBar(ctx, player, x, y, bold, asset_bank) {
-    
-    const leftMask = asset_bank.getSprite(
-        player.mask_frames[0][1], // TODO: first index need to become dymanic once we have mask -player tracking
-    );
+    const maskCount = player.mask_frames.length;
+    const prevMaskIndex = (player.mask - 1 + maskCount) % maskCount;
+    const nextMaskIndex = (player.mask + 1) % maskCount;
+
+    const leftMask = asset_bank.getSprite(player.mask_frames[prevMaskIndex][1]);
     var size = 50;
-    ctx.drawImage(leftMask, x-size, y+10, size, size);
+    ctx.drawImage(leftMask, x - size, y + 10, size, size);
 
     const currentMask = asset_bank.getSprite(
-        player.mask_frames[0][1], // TODO: first index need to become dymanic once we have mask -player tracking
+        player.mask_frames[player.mask][1],
     );
-    ctx.drawImage(currentMask, x, y , size, size);
+    ctx.drawImage(currentMask, x, y, size, size);
 
     const rightMask = asset_bank.getSprite(
-        player.mask_frames[0][1], // TODO: first index need to become dymanic once we have mask -player tracking
+        player.mask_frames[nextMaskIndex][1],
     );
-    ctx.drawImage(rightMask, x+size, y +10, size, size);
+    ctx.drawImage(rightMask, x + size, y + 10, size, size);
 }
-
-
 
 function renderText(ctx, color, font = "30px Arial", text, x, y, bold) {
     ctx.font = font;
@@ -262,7 +262,7 @@ function drawForeground(viewport, asset_bank, player, other_players) {
             renderStatusBar(
                 canvas.ctx,
                 player,
-                canvas.width /2,
+                canvas.width / 2,
                 canvas.height - 50,
                 true,
                 asset_bank,

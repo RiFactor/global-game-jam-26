@@ -54,26 +54,27 @@ async function loadPlayerSprites(
 const masks = ["arlecchino", "il-dottore", "scaramouche"]; // can remove??
 // TODO scaramouche offset
 
-async function loadAllMaskSprites(
-    asset_deck,
-    { character = "player"} = {},
-) {
+async function loadAllMaskSprites(asset_deck, { character = "player" } = {}) {
     const orientations = ["front", "left", "right"];
     const fetchMask = (name) => {
         return orientations.map(async (i) => {
             return asset_deck.fetchImage(
-                `assets/${character}/masks/${name}/${i}.png`
+                `assets/${character}/masks/${name}/${i}.png`,
             );
         });
     };
 
     var all_promises = new Array();
-    all_promises = all_promises.concat(fetchMask("arlecchino"), fetchMask("il-dottore"), fetchMask("scaramouche"));
+    all_promises = all_promises.concat(
+        fetchMask("arlecchino"),
+        fetchMask("il-dottore"),
+        fetchMask("scaramouche"),
+    );
 
     // await all of them together
     const all_masks = await Promise.all(all_promises);
     const back = await asset_deck.fetchImage(
-        `assets/${character}/masks/back.png`
+        `assets/${character}/masks/back.png`,
     );
 
     // split back up into their characters
@@ -84,7 +85,7 @@ async function loadAllMaskSprites(
         m.splice(0, 0, back);
         masks.push(m);
     }
-console.log(masks);
+    console.log(masks);
     return masks;
 }
 
@@ -158,7 +159,7 @@ class Character {
         );
     }
 
-    count = (masks.length - 1);
+    count = masks.length - 1;
 
     prevMask() {
         console.log("prev mask");
