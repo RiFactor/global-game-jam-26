@@ -37,11 +37,17 @@ class State {
     // Entry point to start the game
     async start() {
         const character_sprites = await loadPlayerSprites(this.assets);
-        const mask_sprites = await loadAllMaskSprites(this.assets);
-        console.log(mask_sprites);
+        const enemy_sprites = await loadPlayerSprites(this.assets, {
+            character: "enemy",
+        });
+        const character_masks = await loadAllMaskSprites(this.assets);
+        const enemy_masks = await loadAllMaskSprites(this.assets, {
+            character: "enemy",
+        });
 
-        // this.characters.push(new Character(character_sprites, mask_sprites));
-        this.player = new Character(character_sprites, mask_sprites);
+        this.characters.push(new Character(enemy_sprites, enemy_masks));
+
+        this.player = new Character(character_sprites, character_masks);
 
         setCanvasSize(this.canvas);
         console.log("Game ready");
