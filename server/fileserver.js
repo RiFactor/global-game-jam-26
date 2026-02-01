@@ -65,6 +65,7 @@ class CharacterState {
     mask = 0;
     active = true;
     has_mask = false;
+    health = 0;
 }
 
 class NonPlayerCharacter {
@@ -229,6 +230,7 @@ class PlayerHandler {
             this.state.draw_state = content.draw_state;
             this.state.mask = content.mask;
             this.state.has_mask = content.has_mask;
+            this.state.health = content.health;
         }
     }
 }

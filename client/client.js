@@ -54,6 +54,7 @@ class Connection {
                     draw_state: player.draw_state,
                     mask: player.mask,
                     has_mask: player.has_mask,
+                    health: player.health,
                 },
             };
             this.websocket.send(JSON.stringify(update));

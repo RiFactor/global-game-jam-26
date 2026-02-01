@@ -264,6 +264,7 @@ class Character {
         this.has_mask = new_state.has_mask;
         this.active = new_state.active;
         this.player_id = new_state.player_id;
+        this.health = new_state.health;
     }
 }
 
