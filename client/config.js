@@ -42,6 +42,7 @@ const MASK_CONFIG = [
     ["arlecchino", [0, 0, 0, 0]],
     ["il-dottore", [0, 0, 0, 0]],
     ["scaramouche", [0, 0, -14, 14]],
+    ["brighella", [0, 0, 0, 0]]
 ];
 
 const MASK_COUNT = MASK_CONFIG.length - 1;
