@@ -147,6 +147,17 @@ class State {
 
         this.resetState();
 
+        // Load game music (optional - game will work without it)
+        try {
+            const music_index = await this.assets.fetchAudio("/assets/music/game-zone-320262.mp3");
+            this.gameMusic = this.assets.getAudio(music_index);
+            this.gameMusic.loop = true;
+            this.gameMusic.volume = 0.5;
+        } catch (e) {
+            console.log("Game music not found, continuing without it");
+            this.gameMusic = null;
+        }
+
         // Start the server synchronisation loop
         setInterval(() => {
             this.syncServer();
@@ -159,12 +170,23 @@ class State {
     async onServerMessage(message) {
         // Leaderboard update
         if (message.leaderboard !== undefined) {
+            console.log("Leaderboard updated:", message.leaderboard.length, "entries");
             this.leaderboard = message.leaderboard;
+            // Update player rank from server if provided
             if (
                 message.player_rank &&
                 message.player_rank.player_id === this.player_id
             ) {
                 this.playerRank = message.player_rank.rank;
+            }
+            // Recalculate rank if player is already dead and in the leaderboard
+            if (this.game_state === GameState.GAME_OVER && this.player_id) {
+                const foundIndex = this.leaderboard.findIndex(
+                    (entry) => entry.player_id === this.player_id
+                );
+                if (foundIndex !== -1) {
+                    this.playerRank = foundIndex + 1;
+                }
             }
             return;
         }
@@ -177,6 +199,10 @@ class State {
             this.game_state = GameState.PLAYING;
             // Start the survival timer when the game actually begins
             this.gameStartTime = Date.now();
+            // Play the game music
+            if (this.gameMusic) {
+                this.gameMusic.play().catch(e => console.log("Audio play failed:", e));
+            }
             return;
         }
 
@@ -491,13 +517,13 @@ class State {
             this.canvas.ctx.fillStyle = "black";
             this.canvas.ctx.font = "bold 30px Consolas";
             this.canvas.ctx.fillText(
-                `Your rank: #${this.playerRank}`,
+                `Yo'uer rnak: #${this.playerRank}`,
                 102,
                 352,
             );
             this.canvas.ctx.fillStyle = "yellow";
             this.canvas.ctx.fillText(
-                `Your rank: #${this.playerRank}`,
+                `Yo'uer rnak: #${this.playerRank}`,
                 100,
                 350,
             );
@@ -587,6 +613,11 @@ class State {
             );
             // Send survival time to server for leaderboard
             this.conn.sendDeath(this.survivalTime);
+        }
+        // Stop the music
+        if (this.gameMusic) {
+            this.gameMusic.pause();
+            this.gameMusic.currentTime = 0;
         }
     }
 }

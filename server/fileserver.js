@@ -258,7 +258,8 @@ class ServerState {
         this.websocket_server = websocket_server;
 
         this.game_running = false;
-        this.leaderboard = new Array();
+        this.leaderboard = new Array(); // Historical leaderboard from file
+        this.sessionLeaderboard = new Array(); // Current session only
         this.loadLeaderboard();
 
         this.map_width_tiles = 0;
@@ -314,23 +315,38 @@ class ServerState {
         socket.on("message", async (data) => {
             const result = await player.handleMessage(data);
             if (result && result.type === "death") {
-                // Add to leaderboard
-                this.leaderboard.push({
+                // Create unique entry with timestamp to avoid duplicate issues
+                const entry = {
                     player_id: result.player_id,
                     time: result.time,
+                    timestamp: Date.now(),
+                };
+                
+                // Add to both session and historical leaderboards
+                this.sessionLeaderboard.push(entry);
+                this.leaderboard.push(entry);
+                
+                // Sort by time descending (highest time first), then by timestamp ascending
+                this.sessionLeaderboard.sort((a, b) => {
+                    if (b.time !== a.time) return b.time - a.time;
+                    return a.timestamp - b.timestamp;
                 });
-                // Sort by time descending (highest time first)
-                this.leaderboard.sort((a, b) => b.time - a.time);
+                this.leaderboard.sort((a, b) => {
+                    if (b.time !== a.time) return b.time - a.time;
+                    return a.timestamp - b.timestamp;
+                });
+                
                 // Save to file
                 this.saveLeaderboard();
-                // Find player rank
-                const playerRank =
-                    this.leaderboard.findIndex(
-                        (entry) =>
-                            entry.player_id === result.player_id &&
-                            entry.time === result.time,
-                    ) + 1;
-                // Broadcast updated leaderboard to all players with the dead player's rank
+                
+                // Find player rank in session leaderboard using timestamp for unique identification
+                const playerRank = this.sessionLeaderboard.findIndex(
+                    (e) => e.timestamp === entry.timestamp
+                ) + 1;
+                
+                console.log(`Player ${result.player_id} died with time ${result.time.toFixed(2)}s - Rank: ${playerRank}`);
+                
+                // Broadcast updated session leaderboard
                 this.broadcastLeaderboard(result.player_id, playerRank);
             }
         });
@@ -502,7 +518,7 @@ class ServerState {
     // Broadcast leaderboard to all players
     async broadcastLeaderboard(deadPlayerId = null, playerRank = null) {
         const message = JSON.stringify({
-            leaderboard: this.leaderboard.slice(0, 10), // Top 10
+            leaderboard: this.sessionLeaderboard.slice(0, 10), // Top 10 from current session
             player_rank: deadPlayerId
                 ? { player_id: deadPlayerId, rank: playerRank }
                 : null,
