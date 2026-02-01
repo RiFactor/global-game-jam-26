@@ -223,6 +223,7 @@ class State {
             // Check if game is already running (spectator mode)
             if (message.game_running) {
                 this.isSpectating = true;
+                this.player.health = -1;
                 this.game_state = GameState.GAME_OVER;
                 console.log("Joining as spectator - game already in progress");
             }
