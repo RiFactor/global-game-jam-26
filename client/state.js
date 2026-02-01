@@ -67,6 +67,10 @@ class State {
         this.show_message = 0;
         this.message = "";
 
+        // Survival timer - tracks how long the player survived
+        this.gameStartTime = null;
+        this.survivalTime = 0;
+
         // Functions for creating a new character and new player
         this.addPlayer = undefined;
         this.addCharacter = undefined;
@@ -147,6 +151,8 @@ class State {
             this.show_message = config.SHOW_MESSAGE_TIMER;
             this.message = "Hdie!";
             this.game_state = GameState.PLAYING;
+            // Start the survival timer when the game actually begins
+            this.gameStartTime = Date.now();
             return;
         }
 
@@ -240,6 +246,9 @@ class State {
             this.player,
             this.other_players,
             this.game_map,
+            this.gameStartTime,
+            this.survivalTime,
+            this.game_state === GameState.GAME_OVER
         );
 
         if (this.show_message > 0) {
@@ -400,6 +409,21 @@ class State {
         drawText("black", 5);
         drawText("red", 0);
 
+        // Display survival time score
+        this.canvas.ctx.fillStyle = "white";
+        this.canvas.ctx.font = "bold 40px Consolas";
+        this.canvas.ctx.fillText(
+            `Survival Time: ${this.survivalTime.toFixed(2)}s`,
+            100,
+            300,
+        );
+        this.canvas.ctx.strokeStyle = "black";
+        this.canvas.ctx.strokeText(
+            `Survival Time: ${this.survivalTime.toFixed(2)}s`,
+            100,
+            300,
+        );
+
         const currentMask = this.assets.getSprite(
             this.player.mask_frames[this.mask][1],
         );
@@ -414,6 +438,11 @@ class State {
 
     gameOver() {
         this.game_state = GameState.GAME_OVER;
+        // Calculate final survival time in seconds
+        if (this.gameStartTime) {
+            this.survivalTime = (Date.now() - this.gameStartTime) / 1000;
+            console.log(`You survived for ${this.survivalTime.toFixed(2)} seconds`);
+        }
         // notify the server
     }
 }

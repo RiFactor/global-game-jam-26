@@ -138,6 +138,32 @@ function ChessboardPattern(ctx, canvas, asset_bank, rows, cols, x, y) {
     }
 }
 
+function renderTimer(ctx, timeLeft, x, y, bold, gameStartTime, survivalTime, isDead) {
+    // Show survival time when dead, otherwise show current elapsed time
+    const displayTime = isDead 
+        ? survivalTime 
+        : (gameStartTime ? (Date.now() - gameStartTime) / 1000 : 0);
+    
+    renderText(
+        canvas.ctx,
+        "black",
+        "20px Consolas",
+         `${displayTime.toFixed(2)}s`,
+        x + 2,
+        y + 2,
+        bold,
+    );
+    renderText(
+        canvas.ctx,
+        "white",
+        "20px Consolas",
+        `${displayTime.toFixed(2)}s`,
+        x,
+        y,
+        bold,
+    );
+}
+
 function renderPlayerStatsMask(ctx, player, asset_bank, x, y) {
     const maskImage = asset_bank.getSprite(
         player.tinted_mask_frames[player.mask][1],
@@ -236,7 +262,7 @@ function drawBackground(viewport, asset_bank, rows, cols) {
 }
 
 // HUD
-function drawForeground(canvas, asset_bank, player, other_players) {
+function drawForeground(canvas, asset_bank, player, other_players, gameStartTime, survivalTime, isDead) {
     var leftPadding = 5;
     var topPadding = 25;
 
@@ -267,6 +293,17 @@ function drawForeground(canvas, asset_bank, player, other_players) {
         canvas.height - 50,
         true,
         asset_bank,
+    );
+
+    renderTimer(
+        canvas.ctx,
+        player.game_timer,
+        canvas.width * 0.9,
+        topPadding,
+        true,
+        gameStartTime,
+        survivalTime,
+        isDead
     );
 }
 
@@ -436,7 +473,7 @@ export class HUD {
         other_players.forEach(drawPlayerIndicator);
     }
 
-    draw(dt, viewport, asset_deck, player, other_players, game_map) {
+    draw(dt, viewport, asset_deck, player, other_players, game_map, gameStartTime, survivalTime, isDead) {
         // important info
         // players are never deleted so the length of other_players will never decrease
         // when a player leaves/ disconnects, they re enter a new player
@@ -444,7 +481,7 @@ export class HUD {
 
         const active_others = other_players.filter((p) => p.active == true);
 
-        drawForeground(viewport.canvas, asset_deck, player, active_others);
+        drawForeground(viewport.canvas, asset_deck, player, active_others, gameStartTime, survivalTime, isDead);
         // draw the map in the bottom right corner of the canvas
         this.drawMinimap(canvas, game_map, asset_deck, player, active_others);
     }
