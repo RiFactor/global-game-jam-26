@@ -24,7 +24,7 @@ const MIME_TYPES = {
 const STATIC_PATH = path.join(process.cwd(), "client");
 const toBool = [() => true, () => false];
 
-const Facing = require("../client/character.js");
+const Facing = require("../client/character.js").Facing;
 
 // Translates a url path to a file name.
 function lookupPath(url_path) {
