@@ -43,7 +43,10 @@ export function addDpadToScreen(state) {
     up.style.color = "#fff";
     up.style.borderRadius = "10%";
     up.style.userSelect = "none";
-    up.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "w" }, true); };
+    up.onpointerdown = (e) => {
+        e.preventDefault();
+        state.onKey({ key: "w" }, true);
+    };
     up.onpointerup = () => state.onKey({ key: "w" }, false);
     up.onpointercancel = () => state.onKey({ key: "w" }, false);
     up.onpointerout = () => state.onKey({ key: "w" }, false);
@@ -62,7 +65,10 @@ export function addDpadToScreen(state) {
     down.style.color = "#fff";
     down.style.borderRadius = "10%";
     down.style.userSelect = "none";
-    down.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "s" }, true); };   
+    down.onpointerdown = (e) => {
+        e.preventDefault();
+        state.onKey({ key: "s" }, true);
+    };
     down.onpointerup = () => state.onKey({ key: "s" }, false);
     down.onpointercancel = () => state.onKey({ key: "s" }, false);
     down.onpointerout = () => state.onKey({ key: "s" }, false);
@@ -81,7 +87,10 @@ export function addDpadToScreen(state) {
     left.style.color = "#fff";
     left.style.borderRadius = "10%";
     left.style.userSelect = "none";
-    left.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "a" }, true); };
+    left.onpointerdown = (e) => {
+        e.preventDefault();
+        state.onKey({ key: "a" }, true);
+    };
     left.onpointerup = () => state.onKey({ key: "a" }, false);
     left.onpointercancel = () => state.onKey({ key: "a" }, false);
     left.onpointerout = () => state.onKey({ key: "a" }, false);
@@ -100,7 +109,10 @@ export function addDpadToScreen(state) {
     right.style.color = "#fff";
     right.style.borderRadius = "10%";
     right.style.userSelect = "none";
-    right.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "d" }, true); };
+    right.onpointerdown = (e) => {
+        e.preventDefault();
+        state.onKey({ key: "d" }, true);
+    };
     right.onpointerup = () => state.onKey({ key: "d" }, false);
     right.onpointercancel = () => state.onKey({ key: "d" }, false);
     right.onpointerout = () => state.onKey({ key: "d" }, false);
@@ -126,7 +138,10 @@ export function addActionsButtonsToScreen(state) {
     aButton.style.userSelect = "none";
     aButton.style.borderRadius = "50%";
     aButton.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
-    aButton.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "l" }, true); };
+    aButton.onpointerdown = (e) => {
+        e.preventDefault();
+        state.onKey({ key: "l" }, true);
+    };
     aButton.onpointerup = () => state.onKey({ key: "l" }, false);
     aButton.onpointercancel = () => state.onKey({ key: "l" }, false);
     aButton.onpointerout = () => state.onKey({ key: "l" }, false);
@@ -146,7 +161,10 @@ export function addActionsButtonsToScreen(state) {
     bButton.style.userSelect = "none";
     bButton.style.borderRadius = "50%";
     bButton.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
-    bButton.onpointerdown = (e) => { e.preventDefault(); state.onKey({ key: "j" }, true); };
+    bButton.onpointerdown = (e) => {
+        e.preventDefault();
+        state.onKey({ key: "j" }, true);
+    };
     bButton.onpointerup = () => state.onKey({ key: "j" }, false);
     bButton.onpointercancel = () => state.onKey({ key: "j" }, false);
     bButton.onpointerout = () => state.onKey({ key: "j" }, false);

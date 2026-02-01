@@ -1,5 +1,6 @@
 import * as config from "./config.js";
 import * as utils from "./utils.js";
+import * as collision from "./collision.js";
 
 // An immutable enumeration representing the directions that a character can be
 // facing / moving.
@@ -49,39 +50,41 @@ async function loadPlayerSprites(
 //      ret[i][j]
 //
 // is the jth orientation of the ith mask.
+
+const masks = ["arlecchino", "il-dottore", "scaramouche"]; // can remove??
+// TODO scaramouche offset
+
 async function loadAllMaskSprites(
     asset_deck,
-    { character = "player", mask_name = "il-dottore" } = {},
+    { character = "player"} = {},
 ) {
     const orientations = ["front", "left", "right"];
     const fetchMask = (name) => {
         return orientations.map(async (i) => {
             return asset_deck.fetchImage(
-                `assets/${character}/masks/${name}/${i}.png`,
-                mask_name,
+                `assets/${character}/masks/${name}/${i}.png`
             );
         });
     };
 
     var all_promises = new Array();
-    all_promises = all_promises.concat(fetchMask(mask_name));
+    all_promises = all_promises.concat(fetchMask("arlecchino"), fetchMask("il-dottore"), fetchMask("scaramouche"));
 
     // await all of them together
     const all_masks = await Promise.all(all_promises);
     const back = await asset_deck.fetchImage(
-        `assets/${character}/masks/back.png`,
-        mask_name,
+        `assets/${character}/masks/back.png`
     );
 
     // split back up into their characters
     var masks = new Array();
-    for (let i = 0; i < 1; i += 3) {
+    for (let i = 0; i < 3; i += 1) {
         // get the masks and add in the back index in the right location
-        let m = all_masks.slice(i * 3, i + 3);
+        let m = all_masks.slice(i * 3, i * 3 + 3);
         m.splice(0, 0, back);
         masks.push(m);
     }
-
+console.log(masks);
     return masks;
 }
 
@@ -94,9 +97,10 @@ class Character {
         this.vx = 0;
         this.vy = 0;
         this.speed = config.MEDIUM;
-        this.width = 96;
-        this.height = 96;
+        this.width = config.SCALE;
+        this.height = config.SCALE;
         this.sprite_frames = sprite_frames;
+        this.mask = 0;
         this.mask_frames = mask_frames;
         // Orientation is the same as Facing
         this.orientation = Facing.DOWN;
@@ -106,6 +110,13 @@ class Character {
         this.draw_state = DrawSate.STATIONARY;
         this.anim_frame = 0;
         this.frame_delay = 100;
+        this.player_id = null;
+
+        this.collision_box = new collision.CollisionBox(
+            this.width - 20,
+            this.height,
+            10,
+        );
     }
 
     // Draw the sprite.
@@ -130,22 +141,43 @@ class Character {
         const frame = asset_deck.getSprite(frame_index);
 
         const mask_frame = asset_deck.getSprite(
-            this.mask_frames[0][this.orientation],
+            this.mask_frames[this.mask][this.orientation],
         );
 
         viewport.draw(
             (canvas, x, y) => {
                 canvas.ctx.drawImage(frame, x, y, this.width, this.height);
                 canvas.ctx.drawImage(mask_frame, x, y, this.width, this.height);
+                if (config.DRAW_COLLISION) {
+                    this.collision_box.draw(canvas, x, y);
+                }
             },
             this.x,
             this.y,
         );
     }
 
+    count = (masks.length - 1);
+
+    prevMask() {
+        console.log("prev mask");
+        this.mask == 0 ? (this.mask = this.count) : (this.mask -= 1);
+        console.log("next mask", "count:", this.count, "mask:", this.mask);
+    }
+
+    nextMask() {
+        this.mask == this.count ? (this.mask = 0) : (this.mask += 1);
+    }
+
+    update(dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+    }
+
     // Called once per loop. Updates all logic and position of the Character.
-    update(dt, up, down, left, right) {
+    updateKeys(up, down, left, right) {
         // work out which direction the player is moving
+        // console.log(this.mask);
         var vx = 0;
         var vy = 0;
         if (right) {
@@ -162,8 +194,6 @@ class Character {
         }
 
         this.setMovement(vx, vy);
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
     }
 
     // Given a `facing` direction, move the character that way.
@@ -206,6 +236,7 @@ class Character {
         this.draw_state = new_state.draw_state;
         this.mask = new_state.mask;
         this.active = new_state.active;
+        this.player_id = new_state.player_id;
     }
 }
 

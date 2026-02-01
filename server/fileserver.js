@@ -3,6 +3,9 @@ const http = require("http");
 const path = require("path");
 const ws = require("ws");
 
+const config = require("../client/config.js");
+const utils = require("../client/utils.js");
+
 const PORT = 8000;
 
 const MIME_TYPES = {
@@ -15,6 +18,7 @@ const MIME_TYPES = {
     gif: "image/gif",
     ico: "image/x-icon",
     svg: "image/svg+xml",
+    txt: "text/ascii",
 };
 
 const STATIC_PATH = path.join(process.cwd(), "client");
@@ -24,6 +28,13 @@ const toBool = [() => true, () => false];
 function lookupPath(url_path) {
     if (url_path == "/") return "index.html";
     return url_path;
+}
+
+function gaussianRandom(mu, sigma) {
+    const u = 1 - Math.random();
+    const v = Math.random();
+    const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    return z * sigma + mu;
 }
 
 async function requestHandler(req, res) {
@@ -63,6 +74,114 @@ class CharacterState {
 class NonPlayerCharacter {
     constructor() {
         this.state = new CharacterState();
+        this.target = undefined;
+        // Search radius in game units
+        this.search_radius = 1000;
+        this.speed = 0.165;
+    }
+
+    // Look for a target player in range
+    setTarget(players) {
+        if (players.length < 1) {
+            return;
+        }
+
+        // Iterate over players until an ACTIVE is found one in range, set them as target
+        var dists = new Array();
+        var min_dist = 1e20;
+        var potential_target = "";
+        for (var p of players) {
+            // skip if wrong mask
+            if (p.state.mask != this.state.mask) {
+                continue;
+            }
+
+            var dist = Math.sqrt(
+                Math.pow(p.state.x - this.state.x, 2) +
+                    Math.pow(p.state.y - this.state.y, 2),
+            );
+
+            // Skip if distance too big or inactive
+            if (dist > this.search_radius) {
+                continue;
+            }
+
+            if (!p.state.active) {
+                continue;
+            }
+
+            // If dist less than min dist, switch potential target
+            if (dist < min_dist) {
+                min_dist = dist;
+                this.target = p.state.player_id;
+            }
+        }
+    }
+
+    // Set new vx, vy based on relative direction of player.
+    // speed is slightly faster than players default move
+    updateVelocity(target) {
+        const dy = target.state.y - this.state.y;
+        const dx = target.state.x - this.state.x;
+
+        if (dx == 0 && dy == 0) {
+            // if both dx and dy are 0, reassign to a random number to avoid div by 0 below
+            dx = Math.random() - 0.5;
+            dy = Math.random() - 0.5;
+        }
+
+        const speed_fact =
+            this.speed / Math.sqrt(Math.pow(dy, 2) + Math.pow(dx, 2));
+
+        this.state.vx = dx * speed_fact;
+        this.state.vy = dy * speed_fact;
+    }
+
+    // Check that the target is still valid
+    checkTarget(target) {
+        // Only check if actually following
+        if (this.target !== undefined) {
+            // Mask check
+            if (target.state.mask != this.state.mask) {
+                this.target = undefined;
+            }
+
+            // Active check
+            if (!target.state.active) {
+                this.target = undefined;
+            }
+
+            // If not following anyone, slow down to 50% and drift
+            if (this.target == undefined) {
+                this.state.vx = this.state.vx * 0.1;
+                this.state.vy = this.state.vy * 0.1;
+                return;
+            }
+        }
+    }
+
+    // Wrapper function for all the onstep updates
+    onstepUpdates(players) {
+        this.setTarget(players);
+
+        if (players.length == 0) {
+            return;
+        }
+
+        const target_player = players.filter(
+            (p) => this.target == p.state.player_id,
+        )[0];
+        if (this.target !== undefined) {
+            this.checkTarget(target_player);
+        }
+
+        if (this.target !== undefined) {
+            this.updateVelocity(target_player);
+        } else {
+            // Drift in roughly the same direction as before
+            this.state.vx = this.state.vx + gaussianRandom(0, 0.001);
+            this.state.vy = this.state.vy + gaussianRandom(0, 0.001);
+        }
     }
 }
 
@@ -92,12 +211,24 @@ class ServerState {
         this.npcs = new Array();
         this.server = server;
         this.websocket_server = websocket_server;
+
+        this.map_width_tiles = 0;
+        this.map_height_tiles = 0;
     }
 
-    newNPC({ x = 400, y = 300 } = {}) {
+    newNPC() {
         var npc = new NonPlayerCharacter();
         npc.state.vx = (Math.random() - 0.5) * 0.1;
         npc.state.vy = (Math.random() - 0.5) * 0.1;
+        npc.speed *= gaussianRandom(1.0, 0.1);
+
+        // HACK: adding some slight randomness to npc start position to avoid div by 0 issues later
+        npc.state.x =
+            Math.random() * (this.map_width_tiles - 1) * config.TILE_SIZE +
+            config.TILE_SIZE;
+        npc.state.y =
+            Math.random() * (this.map_height_tiles - 1) * config.TILE_SIZE +
+            config.TILE_SIZE;
         this.npcs.push(npc);
     }
 
@@ -134,8 +265,19 @@ class ServerState {
         socket.send(JSON.stringify({ player_id: player_id }));
     }
 
+    loadMap(filename) {
+        const text = fs.readFileSync(filename, "ascii");
+        this.map_matrix = utils.textToMatrix(text);
+        this.map_height_tiles = this.map_matrix.length;
+        if (this.map_height_tiles > 0) {
+            this.map_width_tiles = this.map_matrix[0].length;
+        }
+    }
+
     updateNPCs(dt) {
         this.npcs.forEach((c) => {
+            c.onstepUpdates(this.players);
+
             c.state.x += c.state.vx * dt;
             c.state.y += c.state.vy * dt;
         });
@@ -160,7 +302,10 @@ class ServerState {
         this.server.listen(port);
         console.log(`Server running at http://127.0.0.1:${PORT}/`);
 
-        this.newNPC();
+        // populate some number of NPCs at the begnning
+        for (let i = 0; i < 48; i += 1) {
+            this.newNPC();
+        }
 
         var previous_time = Date.now();
         setInterval(async () => {
@@ -178,4 +323,5 @@ class ServerState {
 
 const server = http.createServer(requestHandler);
 const state = new ServerState(server, new ws.WebSocketServer({ server }));
+state.loadMap("client/assets/maps/asscii-map1.txt");
 state.bind(PORT);
