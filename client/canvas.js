@@ -115,7 +115,7 @@ export class AssetDeck {
             var audio = new Audio();
             audio.src = uri;
             // Setup a hook to store the audio in the buffer
-            audio.onload = () => {
+            audio.oncanplaythrough = () => {
                 console.log(`Asset fetched: ${uri}`);
                 this.audio_buffer.push(audio);
                 const index = this.audio_buffer.length - 1;
