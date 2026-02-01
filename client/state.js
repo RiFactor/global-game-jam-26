@@ -138,16 +138,11 @@ class State {
             true,
         );
         // This is just a placeholder calculation to center the player in the viewport
-        this.player.x = this.viewport.width / 2 - 50;
-        this.player.y = this.viewport.height / 2 - 50;
-
-        onResize(this.canvas);
-
         this.conn = new Connection(config.URI, (msg) =>
             this.onServerMessage(msg),
         );
 
-        this.player.has_mask = false;
+        this.resetState();
 
         // Start the server synchronisation loop
         setInterval(() => {
@@ -158,7 +153,7 @@ class State {
     }
 
     // Called when a websocket message comes back from the server
-    onServerMessage(message) {
+    async onServerMessage(message) {
         // Leaderboard update
         if (message.leaderboard !== undefined) {
             this.leaderboard = message.leaderboard;
@@ -172,12 +167,20 @@ class State {
         }
 
         // Game started?
-        if (message.start_game !== undefined) {
+        if (message.start_game !== undefined && message.start_game == 1) {
             this.show_message = config.SHOW_MESSAGE_TIMER;
             this.message = "Hdie!";
             this.game_state = GameState.PLAYING;
             // Start the survival timer when the game actually begins
             this.gameStartTime = Date.now();
+            return;
+        }
+
+        if (message.reset_game !== undefined && message.reset_game == 1) {
+            // TODO: this may need to be fixed for the leaderboard?
+            const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+            await delay(config.RESET_TIME);
+            this.resetState();
             return;
         }
 
@@ -233,6 +236,19 @@ class State {
                 this.other_players[i].setState(message.players[i]);
             }
         }
+    }
+
+    resetState() {
+        console.log("Resetting state");
+        this.characters.length = 0;
+        this.game_state = GameState.LOBBY;
+        this.player.health = 100;
+        this.player.x = this.viewport.width / 2 - 50;
+        this.player.y = this.viewport.height / 2 - 50;
+        this.viewport.x = 0;
+        this.viewport.y = 0;
+        onResize(this.canvas);
+        this.player.has_mask = false;
     }
 
     writeMessage(text, x, y) {

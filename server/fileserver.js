@@ -266,6 +266,11 @@ class ServerState {
 
         this.spawn_frequency = config.SPAWN_FREQUENCY;
         this.spawn_increment = config.SPAWN_INCREMENT;
+
+        // For holding onto the interval timers
+        this.interval_npcs = undefined;
+        this.interval_update = undefined;
+        this.interval_broadcast = undefined;
     }
 
     newNPC() {
@@ -379,27 +384,58 @@ class ServerState {
         }
     }
 
+    allPlayersAre(predicate) {
+        // wait for everyone to be ready
+        var all_predicate = true;
+        var some_active = false;
+        for (const p of this.players) {
+            if (p.state.active) {
+                some_active = true;
+                if (!predicate(p)) {
+                    all_predicate = false;
+                    break;
+                }
+            }
+        }
+        return all_predicate && some_active;
+    }
+
     // Called as the update tick
     updateGameState(dt) {
         if (this.game_running) {
             this.updateNPCs(dt);
+            // check if everyone has been got yet
+            if (this.allPlayersAre((p) => p.state.health < 0)) {
+                for (var p of this.players) {
+                    // all players are unready
+                    p.ready = false;
+                }
+                this.resetGame();
+            }
         } else {
             // wait for everyone to be ready
-            var all_ready = true;
-            var some_active = false;
-            for (const p of this.players) {
-                if (p.state.active) {
-                    some_active = true;
-                    if (!p.ready) {
-                        all_ready = false;
-                        break;
-                    }
-                }
-            }
-            if (some_active && all_ready) {
+            if (this.allPlayersAre((p) => p.ready)) {
                 this.startGame();
             }
         }
+    }
+
+    /// Used to reset all game state
+    resetGame() {
+        console.log("Resetting game");
+        this.game_running = false;
+        // Notify all players to reset game state
+        const message = JSON.stringify({
+            reset_game: 1,
+        });
+        this.players.forEach((player) => {
+            player.socket.send(message);
+        });
+        // Clear the NPCs interval
+        clearInterval(this.interval_npcs);
+        // delete all npcs, initialse new fresh ones
+        this.npcs.length = 0;
+        this.setInitialNPCs();
     }
 
     // Called once when the game starts
@@ -420,7 +456,7 @@ class ServerState {
         });
 
         // Setup the interval to spawn new NPCs
-        setInterval(async () => {
+        this.interval_npcs = setInterval(async () => {
             const spawn_amount = utils.gaussianRandom(
                 this.spawn_increment,
                 1 * Math.sqrt(this.spawn_increment),
@@ -470,6 +506,15 @@ class ServerState {
         });
     }
 
+    setInitialNPCs() {
+        // populate some number of NPCs at the begnning
+        for (let i = 0; i < 48; i += 1) {
+            this.newNPC();
+        }
+        // set them all stationary
+        this.npcs.forEach((c) => (c.state.draw_state = 0));
+    }
+
     bind(port) {
         this.websocket_server.on("connection", (socket, req) =>
             this.onClientConnection(socket, req),
@@ -477,22 +522,17 @@ class ServerState {
         this.server.listen(port);
         console.log(`Server running at http://127.0.0.1:${PORT}/`);
 
-        // populate some number of NPCs at the begnning
-        for (let i = 0; i < 48; i += 1) {
-            this.newNPC();
-        }
-        // set them all stationary
-        this.npcs.forEach((c) => (c.state.draw_state = 0));
+        this.setInitialNPCs();
 
         var previous_time = Date.now();
-        setInterval(async () => {
+        this.interval_update = setInterval(async () => {
             const now = Date.now();
             this.updateGameState(now - previous_time);
             previous_time = now;
         }, 1000 / 30); // call 30 times a second
 
         // triger periodically broadcasting all character states
-        setInterval(async () => {
+        this.interval_broadcast = setInterval(async () => {
             await this.broadcastUpdates();
         }, 1000 / 10); // call 10 times a second
     }

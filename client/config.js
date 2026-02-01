@@ -23,6 +23,8 @@ const TILE_SIZE = 96;
 const DRAW_COLLISION = false;
 
 const SHOW_MESSAGE_TIMER = 3000;
+// In miliseconds
+const RESET_TIME = 3000;
 
 // How fast an individual enemy ticks down the health bar.
 const DAMAGE_RATE = 0.05;
@@ -67,4 +69,5 @@ export {
     CANVAS_HEIGHT,
     SHOW_MESSAGE_TIMER,
     WORLD_MAP,
+    RESET_TIME,
 };
