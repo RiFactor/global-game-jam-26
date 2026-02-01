@@ -107,6 +107,9 @@ class Character {
         // Orientation is the same as Facing
         this.orientation = Facing.DOWN;
         this.active = true;
+        // Indicates whether they have been got
+        this.alive = true;
+        this.health = 100;
 
         this.timer = 0;
         this.draw_state = DrawSate.STATIONARY;

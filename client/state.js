@@ -11,6 +11,11 @@ import {
 
 import { Connection } from "./client.js";
 
+const GameState = Object.freeze({
+    PLAYING: 0,
+    GAME_OVER: 1,
+});
+
 class State {
     constructor(canvas, connection) {
         this.x = 10;
@@ -25,6 +30,8 @@ class State {
         // Set the currently active canvas
         this.canvas = this._main_canvas;
         this.assets = new AssetDeck();
+
+        this.game_state = GameState.PLAYING;
 
         // This is just example code for now.
         this.characters = new Array();
@@ -198,10 +205,21 @@ class State {
             this.other_players,
             this.game_map,
         );
+
+        if (this.game_state == GameState.GAME_OVER) {
+            this.drawGameOver();
+        }
     }
 
     // This triggers as a callback.
     onKey(e, active) {
+        if (this.game_state == GameState.GAME_OVER) {
+            this.key_right = false;
+            this.key_up = false;
+            this.key_down = false;
+            this.key_left = false;
+            return;
+        }
         switch (e.key) {
             case "d":
             case "D":
@@ -254,6 +272,9 @@ class State {
     }
 
     update(dt) {
+        if (this.game_state == GameState.GAME_OVER) {
+            return;
+        }
         this.player.updateKeys(
             this.key_up,
             this.key_down,
@@ -274,7 +295,13 @@ class State {
                 this.player.y,
             );
             if (collide !== null) {
-                console.log("Hello World");
+                if (this.player.mask == c.mask) {
+                    this.player.health -= config.DAMAGE_RATE * dt;
+                    console.log(this.player.health);
+                    if (this.player.health < 0) {
+                        this.gameOver();
+                    }
+                }
             }
         });
 
@@ -295,6 +322,44 @@ class State {
 
         // After updating the movement, send updated position to server
         this.conn.send(this.player);
+    }
+
+    drawGameOver() {
+        const drawText = (color, offset) => {
+            this.canvas.ctx.fillStyle = color;
+            this.canvas.ctx.font = "bold 80px Consolas";
+            this.canvas.ctx.fillText(
+                "Htey fuond oyu",
+                100 + offset,
+                200 + offset,
+            );
+            this.canvas.ctx.strokeStyle = "black";
+            this.canvas.ctx.strokeText(
+                "Htey fuond oyu",
+                100 + offset,
+                200 + offset,
+            );
+        };
+        drawText("black", 15);
+        drawText("red", 10);
+        drawText("black", 5);
+        drawText("red", 0);
+
+        const currentMask = this.assets.getSprite(
+            this.player.mask_frames[this.mask][1],
+        );
+        this.canvas.ctx.drawImage(
+            currentMask,
+            this.canvas.width / 2 - 144,
+            this.canvas.height / 2,
+            288,
+            288,
+        );
+    }
+
+    gameOver() {
+        this.game_state = GameState.GAME_OVER;
+        // notify the server
     }
 }
 

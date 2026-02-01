@@ -18,7 +18,10 @@ const VIEWPORT_BUFFER = 3 * SCALE;
 
 const TILE_SIZE = 96;
 
-const DRAW_COLLISION = false;
+const DRAW_COLLISION = true;
+
+// How fast an individual enemy ticks down the health bar.
+const DAMAGE_RATE = 0.05;
 
 // Use the current hostname instead of hardcoded localhost
 // This allows mobile devices to connect to the server
