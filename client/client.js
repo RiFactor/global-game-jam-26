@@ -34,6 +34,13 @@ class Connection {
         });
     }
 
+    // Tell the server that we are ready
+    sendReady() {
+        if (this.ready) {
+            this.websocket.send(JSON.stringify({ ready: 1 }));
+        }
+    }
+
     // Send the player's position to the server
     send(player) {
         if (this.ready) {
@@ -46,6 +53,8 @@ class Connection {
                     orientation: player.orientation,
                     draw_state: player.draw_state,
                     mask: player.mask,
+                    has_mask: player.has_mask,
+                    health: player.health,
                 },
             };
             this.websocket.send(JSON.stringify(update));

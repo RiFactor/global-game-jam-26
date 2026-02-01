@@ -146,6 +146,14 @@ function renderPlayerStatsMask(ctx, player, asset_bank, x, y) {
     ctx.drawImage(maskImage, x, y - 5 - size / 2, size, size);
 }
 
+function renderPlayerStatsHealthBar(ctx, x, y, health) {
+    // health bar
+    ctx.fillStyle = "red";
+    ctx.fillRect(x + 30, y - 20, 100, 20);
+    ctx.fillStyle = "green";
+    ctx.fillRect(x + 30, y - 20, health, 20);
+}
+
 function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
     renderPlayerStatsMask(ctx, player, asset_bank, x, y);
 
@@ -160,12 +168,14 @@ function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
         }
     }
 
+    renderPlayerStatsHealthBar(ctx, x, y, player.health);
+
     renderText(
         canvas.ctx,
         "black",
         "20px Consolas",
         playerName || "Offline",
-        x + 40,
+        x + 134,
         y,
         bold,
     );
@@ -174,7 +184,7 @@ function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
         "white",
         "20px Consolas",
         playerName || "Offline",
-        x + 38,
+        x + 132,
         y - 2,
         bold,
     );
@@ -372,6 +382,7 @@ export class GameMap {
                 character.x,
                 character.y,
             );
+
             if (collision !== null) {
                 const update = s.collision_box.determineUpdate(
                     collision,

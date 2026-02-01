@@ -107,9 +107,13 @@ class Character {
         // Orientation is the same as Facing
         this.orientation = Facing.DOWN;
         this.active = true;
+        // Indicates whether they have been got
+        this.alive = true;
+        this.health = 100;
 
         this.timer = 0;
         this.draw_state = DrawSate.STATIONARY;
+        this.has_mask = true;
         this.anim_frame = 0;
         this.frame_delay = 100;
         this.player_id = null;
@@ -157,13 +161,15 @@ class Character {
         viewport.draw(
             (canvas, x, y) => {
                 canvas.ctx.drawImage(frame, x, y, this.width, this.height);
-                canvas.ctx.drawImage(
-                    mask_frame,
-                    x + mask_offset_x,
-                    y + mask_offset_y,
-                    this.width,
-                    this.height,
-                );
+                if (this.has_mask) {
+                    canvas.ctx.drawImage(
+                        mask_frame,
+                        x + mask_offset_x,
+                        y + mask_offset_y,
+                        this.width,
+                        this.height,
+                    );
+                }
                 if (config.DRAW_COLLISION) {
                     this.collision_box.draw(canvas, x, y);
                 }
@@ -255,8 +261,10 @@ class Character {
         this.orientation = new_state.orientation;
         this.draw_state = new_state.draw_state;
         this.mask = new_state.mask;
+        this.has_mask = new_state.has_mask;
         this.active = new_state.active;
         this.player_id = new_state.player_id;
+        this.health = new_state.health;
     }
 }
 
