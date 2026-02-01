@@ -1,6 +1,6 @@
 services:
   our-game:
-    container_name: our-game
-    image: shellywell123/our-game:latest
+    container_name: mask-one-standing
+    image: shellywell123/mask-one-standing:latest
     ports:
       - 8000:8000
