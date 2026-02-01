@@ -75,6 +75,9 @@ class State {
         this.leaderboard = [];
         this.playerRank = null;
 
+        // Spectator mode - for late-joining players
+        this.isSpectating = false;
+
         // Functions for creating a new character and new player
         this.addPlayer = undefined;
         this.addCharacter = undefined;
@@ -170,6 +173,7 @@ class State {
         if (message.start_game !== undefined && message.start_game == 1) {
             this.show_message = config.SHOW_MESSAGE_TIMER;
             this.message = "Hdie!";
+            this.isSpectating = false;
             this.game_state = GameState.PLAYING;
             // Start the survival timer when the game actually begins
             this.gameStartTime = Date.now();
@@ -189,6 +193,13 @@ class State {
             console.log(`Player ID set to ${message.player_id}`);
             this.player_id = message.player_id;
             this.player.player_id = message.player_id;
+            
+            // Check if game is already running (spectator mode)
+            if (message.game_running) {
+                this.isSpectating = true;
+                this.game_state = GameState.GAME_OVER;
+                console.log("Joining as spectator - game already in progress");
+            }
             return;
         }
 
@@ -471,6 +482,50 @@ class State {
 
         drawTime("black", 15);
         drawTime("white", 10);
+
+        // Display spectator message if spectating
+        if (this.isSpectating) {
+            this.canvas.ctx.fillStyle = "black";
+            this.canvas.ctx.font = "bold 30px Consolas";
+            this.canvas.ctx.fillText(
+                "Spectating this session",
+                102,
+                352,
+            );
+            this.canvas.ctx.fillStyle = "yellow";
+            this.canvas.ctx.fillText(
+                "Spectating this session",
+                100,
+                350,
+            );
+            
+            this.canvas.ctx.fillStyle = "black";
+            this.canvas.ctx.font = "20px Consolas";
+            this.canvas.ctx.fillText(
+                "You will join the next session",
+                102,
+                382,
+            );
+            this.canvas.ctx.fillStyle = "white";
+            this.canvas.ctx.fillText(
+                "You will join the next session",
+                100,
+                380,
+            );
+            
+            this.canvas.ctx.fillStyle = "black";
+            this.canvas.ctx.fillText(
+                "once all current players die",
+                102,
+                412,
+            );
+            this.canvas.ctx.fillStyle = "white";
+            this.canvas.ctx.fillText(
+                "once all current players die",
+                100,
+                410,
+            );
+        }
 
         // Display player's rank underneath the time
         if (this.playerRank) {
