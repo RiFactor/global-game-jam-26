@@ -11,12 +11,6 @@ export class AssetDeck {
         this.tint_buffer = new Map();
     }
 
-    gaussianRandom() {
-        const u = 1 - Math.random();
-        const v = Math.random();
-        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-    }
-
     toDoubleHex(number) {
         var basic = number.toString(16);
         if (basic.length > 1) {
@@ -27,9 +21,9 @@ export class AssetDeck {
     }
 
     randomTint() {
-        var r = Math.abs(this.gaussianRandom());
-        var g = Math.abs(this.gaussianRandom());
-        var b = Math.abs(this.gaussianRandom());
+        var r = Math.abs(utils.gaussianRandom());
+        var g = Math.abs(utils.gaussianRandom());
+        var b = Math.abs(utils.gaussianRandom());
         var normalisation = 255.0 / Math.sqrt(r * r + g * g + b * b);
         var normalised_r = Math.round(r * normalisation);
         var normalised_g = Math.round(g * normalisation);
