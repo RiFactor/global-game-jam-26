@@ -66,7 +66,6 @@ class State {
             loadAllMaskSprites(this.assets),
             loadAllMaskSprites(this.assets, {
                 character: "enemy",
-                mask_name: "arlecchino",
             }),
         ]);
         const character_sprites = all_assets[0];
