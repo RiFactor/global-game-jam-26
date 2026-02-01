@@ -61,7 +61,7 @@ class CharacterState {
     vx = 0;
     vy = 0;
     orientation = 1;
-    draw_state = 0;
+    draw_state = 1;
     mask = 0;
     active = true;
     has_mask = false;
@@ -395,6 +395,8 @@ class ServerState {
         for (let i = 0; i < 48; i += 1) {
             this.newNPC();
         }
+        // set them all stationary
+        this.npcs.forEach((c) => (c.state.draw_state = 0));
 
         var previous_time = Date.now();
         setInterval(async () => {
