@@ -1,12 +1,12 @@
-# <a><img src="client/assets/player/front1.png" width="45"/></a> global-game-jam-26
+# <a><img src="client/assets/player/front1.png" width="45"/></a> Mask One Standing
 
 ```
 +--------------------------------------------------------------------------------+
 |                                                                                |
 |                                                         Global Game Jam 2026   |
-|                                                         Southampton            |
-|        we havent got a name yet.                        Theme of "Mask"        |
-|        Recommmend one in the gh issue                   5 Devs                 |
+|        Mask One Standing                                Southampton            |
+|                                                         Theme of "Mask"        |
+|        Last mask standing wins!                         5 Devs                 |
 |                                                         48 Hours               |
 |                                                         0 sleep                |
 |                                                                                |
