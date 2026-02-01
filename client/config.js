@@ -37,6 +37,9 @@ const MASK_CONFIG = [
 
 const MASK_COUNT = MASK_CONFIG.length - 1;
 
+const SPAWN_FREQUENCY = 10;
+const SPAWN_INCREMENT = 10;
+
 export {
     SLOW,
     MEDIUM,
@@ -50,6 +53,9 @@ export {
     MASK_COUNT,
     MINIMAP_SCALE,
     MINIMAPE_INDICATOR_SCALE,
+    SPAWN_FREQUENCY,
+    SPAWN_INCREMENT,
+    DAMAGE_RATE,
     CANVAS_WIDTH,
     CANVAS_HEIGHT,
 };
