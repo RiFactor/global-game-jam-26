@@ -60,6 +60,7 @@ async function loadAllMaskSprites(asset_deck, { character = "player" } = {}) {
         return orientations.map(async (i) => {
             return asset_deck.fetchImage(
                 `assets/${character}/masks/${name}/${i}.png`,
+                name,
             );
         });
     };
