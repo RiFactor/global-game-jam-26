@@ -1,5 +1,5 @@
 services:
-  our-game:
+  mask-one-standing:
     container_name: mask-one-standing
     image: shellywell123/mask-one-standing:latest
     ports:
