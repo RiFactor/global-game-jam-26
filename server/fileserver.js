@@ -7,6 +7,7 @@ const config = require("../client/config.js");
 const utils = require("../client/utils.js");
 
 const PORT = 8000;
+const LEADERBOARD_FILE = "leaderboard.txt";
 
 const MIME_TYPES = {
     default: "application/octet-stream",
@@ -32,38 +33,19 @@ function lookupPath(url_path) {
     return url_path;
 }
 
-async function requestHandler(req, res) {
-    if (req.url == "/ws") return; // it's already been upgraded
-
-    const file_path = path.join(STATIC_PATH, lookupPath(req.url));
-    const file_exists = await fs.promises.access(file_path).then(...toBool);
-
-    var status_code = 200;
-    if (file_exists) {
-        const ext = path.extname(file_path).substring(1).toLowerCase();
-        const stream = fs.createReadStream(file_path);
-        const mimeType = MIME_TYPES[ext] || MIME_TYPES.default;
-        res.writeHead(status_code, { "Content-Type": mimeType });
-        stream.pipe(res);
-    } else {
-        status_code = 404;
-        res.writeHead(status_code);
-        res.end("Not found\n");
-    }
-
-    // console.log(`${req.method} ${req.url} ${status_code}`);
-}
-
 class CharacterState {
     player_id = "";
     x = 0;
     y = 0;
     vx = 0;
     vy = 0;
-    orientation = 0;
-    draw_state = 0;
+    orientation = 1;
+    draw_state = 1;
     mask = 0;
     active = true;
+    has_mask = false;
+    health = 0;
+    survival_time = 0;
 }
 
 class NonPlayerCharacter {
@@ -101,7 +83,7 @@ class NonPlayerCharacter {
                 continue;
             }
 
-            if (!p.state.active) {
+            if (!p.state.active || p.state.health < 0) {
                 continue;
             }
 
@@ -142,7 +124,7 @@ class NonPlayerCharacter {
             }
 
             // Active check
-            if (!target.state.active) {
+            if (!target.state.active || target.state.health <= 0) {
                 this.target = undefined;
             }
 
@@ -206,44 +188,112 @@ class PlayerHandler {
         this.socket = socket;
         this.state = new CharacterState();
         this.state.player_id = player_id;
+        this.ready = false;
     }
 
     // Update the player state from an incoming message.
     async handleMessage(data) {
-        const msg = JSON.parse(data).content;
-        this.state.x = msg.x;
-        this.state.y = msg.y;
-        this.state.vx = msg.vx;
-        this.state.vy = msg.vy;
-        this.state.orientation = msg.orientation;
-        this.state.draw_state = msg.draw_state;
-        this.state.mask = msg.mask;
+        const msg = JSON.parse(data);
+        if (msg.ready !== undefined) {
+            if (msg.ready == 1) {
+                console.log(`Player ${this.state.player_id} is ready`);
+                this.ready = true;
+            }
+        }
+        if (msg.death !== undefined) {
+            if (msg.death == 1) {
+                this.state.survival_time = msg.survival_time;
+                console.log(
+                    `Player ${this.state.player_id} died with time ${msg.survival_time.toFixed(2)}s`,
+                );
+                return {
+                    type: "death",
+                    player_id: this.state.player_id,
+                    time: msg.survival_time,
+                };
+            }
+        }
+        if (msg.content !== undefined) {
+            const content = msg.content;
+            this.state.x = content.x;
+            this.state.y = content.y;
+            this.state.vx = content.vx;
+            this.state.vy = content.vy;
+            this.state.orientation = content.orientation;
+            this.state.draw_state = content.draw_state;
+            this.state.mask = content.mask;
+            this.state.has_mask = content.has_mask;
+            this.state.health = content.health;
+        }
     }
 }
 
 class ServerState {
-    constructor(server, websocket_server) {
+    constructor() {
+        this.server = http.createServer((req, res) => {
+            this.requestHandler(req, res);
+        });
+        const server = this.server;
+        this.websocket_server = new ws.WebSocketServer({ server });
         this.players = new Array();
         this.npcs = new Array();
-        this.server = server;
-        this.websocket_server = websocket_server;
 
+        this.game_running = false;
+        this.leaderboard = new Array(); // Historical leaderboard from file
+        this.sessionLeaderboard = new Array(); // Current session only
+        this.loadLeaderboard();
+
+        this.map_raw = "";
         this.map_width_tiles = 0;
         this.map_height_tiles = 0;
 
-        this.spawn_round = 1;
-        this.spawn_frequency = 5;
-        this.spawn_increment = 20;
+        this.spawn_frequency = config.SPAWN_FREQUENCY;
+        this.spawn_increment = config.SPAWN_INCREMENT;
+
+        // For holding onto the interval timers
+        this.interval_npcs = undefined;
+        this.interval_update = undefined;
+        this.interval_broadcast = undefined;
+
+        // IDs for masks, updated dynamically from config.js/MASK_CONFIG
+        this.mask_ids = new Array();
+        for (let i = 0; i <= config.MASK_COUNT; i++) {
+            this.mask_ids.push(i);
+        }
+        console.log(`${this.mask_ids}`);
+    }
+
+    async requestHandler(req, res) {
+        if (req.url == "/ws") return; // it's already been upgraded
+
+        if (req.url == "/map") {
+            res.writeHead(200, { "Content-Type": MIME_TYPES["txt"] });
+            res.end(this.map_raw);
+            return;
+        }
+
+        const file_path = path.join(STATIC_PATH, lookupPath(req.url));
+        const file_exists = await fs.promises.access(file_path).then(...toBool);
+
+        var status_code = 200;
+        if (file_exists) {
+            const ext = path.extname(file_path).substring(1).toLowerCase();
+            const stream = fs.createReadStream(file_path);
+            const mimeType = MIME_TYPES[ext] || MIME_TYPES.default;
+            res.writeHead(status_code, { "Content-Type": mimeType });
+            stream.pipe(res);
+        } else {
+            status_code = 404;
+            res.writeHead(status_code);
+            res.end("Not found\n");
+        }
     }
 
     newNPC() {
         var npc = new NonPlayerCharacter();
-        npc.state.vx = (Math.random() - 0.5) * 0.1;
-        npc.state.vy = (Math.random() - 0.5) * 0.1;
         npc.speed *= utils.gaussianRandom(1.0, 0.1);
-        npc.state.draw_state = 1;
-        // TODO: bump this number when we add more masks
-        npc.state.mask = utils.randomSelect([0, 1, 2]);
+        npc.state.mask = utils.randomSelect(this.mask_ids);
+        npc.state.has_mask = true;
 
         npc.state.x =
             Math.random() * (this.map_width_tiles - 1) * config.TILE_SIZE +
@@ -276,7 +326,47 @@ class ServerState {
             console.log(`Websocket connected from ${ip}:${port}`);
         }
 
-        socket.on("message", (data) => player.handleMessage(data));
+        socket.on("message", async (data) => {
+            const result = await player.handleMessage(data);
+            if (result && result.type === "death") {
+                // Create unique entry with timestamp to avoid duplicate issues
+                const entry = {
+                    player_id: result.player_id,
+                    time: result.time,
+                    timestamp: Date.now(),
+                };
+
+                // Add to both session and historical leaderboards
+                this.sessionLeaderboard.push(entry);
+                this.leaderboard.push(entry);
+
+                // Sort by time descending (highest time first), then by timestamp ascending
+                this.sessionLeaderboard.sort((a, b) => {
+                    if (b.time !== a.time) return b.time - a.time;
+                    return a.timestamp - b.timestamp;
+                });
+                this.leaderboard.sort((a, b) => {
+                    if (b.time !== a.time) return b.time - a.time;
+                    return a.timestamp - b.timestamp;
+                });
+
+                // Save to file
+                this.saveLeaderboard();
+
+                // Find player rank in session leaderboard using timestamp for unique identification
+                const playerRank =
+                    this.sessionLeaderboard.findIndex(
+                        (e) => e.timestamp === entry.timestamp,
+                    ) + 1;
+
+                console.log(
+                    `Player ${result.player_id} died with time ${result.time.toFixed(2)}s - Rank: ${playerRank}`,
+                );
+
+                // Broadcast updated session leaderboard
+                this.broadcastLeaderboard(result.player_id, playerRank);
+            }
+        });
         socket.on("error", console.error);
         socket.on("close", () => {
             console.log(`Player ${player_id} disconnected.`);
@@ -284,11 +374,17 @@ class ServerState {
         });
 
         // Need to let the player known that their ID is
-        socket.send(JSON.stringify({ player_id: player_id }));
+        socket.send(
+            JSON.stringify({
+                player_id: player_id,
+                game_running: this.game_running,
+            }),
+        );
     }
 
     loadMap(filename) {
         const text = fs.readFileSync(filename, "ascii");
+        this.map_raw = text;
         this.map_matrix = utils.textToMatrix(text);
         this.map_height_tiles = this.map_matrix.length;
         if (this.map_height_tiles > 0) {
@@ -296,10 +392,132 @@ class ServerState {
         }
     }
 
+    loadLeaderboard() {
+        try {
+            if (fs.existsSync(LEADERBOARD_FILE)) {
+                const data = fs.readFileSync(LEADERBOARD_FILE, "utf8");
+                const lines = data.split("\n").filter((line) => line.trim());
+                this.leaderboard = lines.map((line) => {
+                    const [player_id, time] = line.split(",");
+                    return { player_id, time: parseFloat(time) };
+                });
+                console.log(
+                    `Loaded ${this.leaderboard.length} entries from leaderboard`,
+                );
+            }
+        } catch (err) {
+            console.error("Error loading leaderboard:", err);
+            this.leaderboard = [];
+        }
+    }
+
+    saveLeaderboard() {
+        try {
+            const data = this.leaderboard
+                .map((entry) => `${entry.player_id},${entry.time}`)
+                .join("\n");
+            fs.writeFileSync(LEADERBOARD_FILE, data, "utf8");
+            console.log("Leaderboard saved to file");
+        } catch (err) {
+            console.error("Error saving leaderboard:", err);
+        }
+    }
+
+    allPlayersAre(predicate) {
+        // wait for everyone to be ready
+        var all_predicate = true;
+        var some_active = false;
+        for (const p of this.players) {
+            if (p.state.active) {
+                some_active = true;
+                if (!predicate(p)) {
+                    all_predicate = false;
+                    break;
+                }
+            }
+        }
+        return all_predicate && some_active;
+    }
+
+    // Called as the update tick
+    updateGameState(dt) {
+        if (this.game_running) {
+            this.updateNPCs(dt);
+            // check if everyone has been got yet
+            if (this.allPlayersAre((p) => p.state.health < 0)) {
+                for (var p of this.players) {
+                    // all players are unready
+                    p.ready = false;
+                }
+                this.resetGame();
+            }
+        } else {
+            // wait for everyone to be ready
+            if (this.allPlayersAre((p) => p.ready)) {
+                this.startGame();
+            }
+        }
+    }
+
+    /// Used to reset all game state
+    resetGame() {
+        console.log("Resetting game");
+        this.game_running = false;
+        // Notify all players to reset game state
+        const message = JSON.stringify({
+            reset_game: 1,
+        });
+        this.players.forEach((player) => {
+            player.socket.send(message);
+        });
+        // remove all inactive players
+        const num_players = this.players.length;
+        this.players = this.players.filter((player) => player.state.active);
+        console.log(
+            `Cleared ${num_players - this.players.length} inactive players`,
+        );
+        // Clear the NPCs interval
+        clearInterval(this.interval_npcs);
+        // delete all npcs, initialse new fresh ones
+        this.npcs.length = 0;
+        this.setInitialNPCs();
+    }
+
+    // Called once when the game starts
+    startGame() {
+        console.log("All players are ready. Starting game!");
+
+        // Notify all players to set state to playing
+        const message = JSON.stringify({
+            start_game: 1,
+        });
+        this.players.forEach((player) => {
+            player.socket.send(message);
+        });
+
+        // Enable all NPC animations
+        this.npcs.forEach((c) => {
+            c.state.draw_state = 1;
+        });
+
+        // Setup the interval to spawn new NPCs
+        this.interval_npcs = setInterval(async () => {
+            const spawn_amount = utils.gaussianRandom(
+                this.spawn_increment,
+                1 * Math.sqrt(this.spawn_increment),
+            );
+
+            for (let i = 0; i < spawn_amount; i += 1) {
+                this.newNPC();
+            }
+        }, 1000 * this.spawn_frequency);
+
+        this.game_running = true;
+    }
+
     updateNPCs(dt) {
         this.npcs.forEach((c) => {
             c.onstepUpdates(this.players);
-
             c.state.x += c.state.vx * dt;
             c.state.y += c.state.vy * dt;
         });
@@ -317,6 +535,31 @@ class ServerState {
         });
     }
 
+    // Broadcast leaderboard to all players
+    async broadcastLeaderboard(deadPlayerId = null, playerRank = null) {
+        const message = JSON.stringify({
+            leaderboard: this.sessionLeaderboard.slice(0, 10), // Top 10 from current session
+            player_rank: deadPlayerId
+                ? { player_id: deadPlayerId, rank: playerRank }
+                : null,
+        });
+
+        this.players.forEach((player) => {
+            if (player.socket.readyState === 1) {
+                player.socket.send(message);
+            }
+        });
+    }
+
+    setInitialNPCs() {
+        // populate some number of NPCs at the begnning
+        for (let i = 0; i < 48; i += 1) {
+            this.newNPC();
+        }
+        // set them all stationary
+        this.npcs.forEach((c) => (c.state.draw_state = 0));
+    }
+
     bind(port) {
         this.websocket_server.on("connection", (socket, req) =>
             this.onClientConnection(socket, req),
@@ -324,40 +567,22 @@ class ServerState {
         this.server.listen(port);
         console.log(`Server running at http://127.0.0.1:${PORT}/`);
 
-        // populate some number of NPCs at the begnning
-        for (let i = 0; i < 48; i += 1) {
-            this.newNPC();
-        }
+        this.setInitialNPCs();
 
         var previous_time = Date.now();
-        setInterval(async () => {
+        this.interval_update = setInterval(async () => {
             const now = Date.now();
-            this.updateNPCs(now - previous_time);
+            this.updateGameState(now - previous_time);
             previous_time = now;
         }, 1000 / 30); // call 30 times a second
 
         // triger periodically broadcasting all character states
-        setInterval(async () => {
+        this.interval_broadcast = setInterval(async () => {
             await this.broadcastUpdates();
         }, 1000 / 10); // call 10 times a second
-
-        // Periodically spawn new NPCs
-        setInterval(async () => {
-            const spawn_amount = utils.gaussianRandom(
-                this.spawn_round,
-                1 * Math.sqrt(this.spawn_round),
-            );
-
-            this.spawn_round += this.spawn_increment;
-
-            for (let i = 0; i < spawn_amount; i += 1) {
-                this.newNPC();
-            }
-        }, 1000 * this.spawn_frequency);
     }
 }
 
-const server = http.createServer(requestHandler);
-const state = new ServerState(server, new ws.WebSocketServer({ server }));
-state.loadMap("client/assets/maps/asscii-map1.txt");
+const state = new ServerState();
+state.loadMap(`client${config.WORLD_MAP}`);
 state.bind(PORT);

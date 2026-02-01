@@ -1,6 +1,6 @@
 services:
-  mask-game:
-    container_name: mask-game
+  mask-one-standing:
+    container_name: mask-one-standing
     build:
       context: .
     volumes:

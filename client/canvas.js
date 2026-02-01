@@ -9,6 +9,7 @@ export class AssetDeck {
         this.audio_buffer = new Array();
         this.file_buffer = new Array();
         this.tint_buffer = new Map();
+        this.tint_distance = 130;
     }
 
     toDoubleHex(number) {
@@ -28,20 +29,52 @@ export class AssetDeck {
         var normalised_r = Math.round(r * normalisation);
         var normalised_g = Math.round(g * normalisation);
         var normalised_b = Math.round(b * normalisation);
-        return (
+        return [
             "#" +
-            this.toDoubleHex(normalised_r) +
-            this.toDoubleHex(normalised_g) +
-            this.toDoubleHex(normalised_b)
-        );
+                this.toDoubleHex(normalised_r) +
+                this.toDoubleHex(normalised_g) +
+                this.toDoubleHex(normalised_b),
+            [normalised_r, normalised_g, normalised_b],
+        ];
+    }
+
+    // Try to keep the tints quite different
+    randomDistantTint() {
+        if (this.tint_buffer.size == 0) {
+            return this.randomTint();
+        } else {
+            var max_dist = -1;
+            var max_candidate = null;
+            for (let i = 1; i <= 3; i++) {
+                let candidate = this.randomTint();
+                let min_dist = Math.min(
+                    ...this.tint_buffer.values().map((value) => {
+                        return Math.sqrt(
+                            Math.pow(candidate[1][0] - value[1][0], 2) +
+                                Math.pow(candidate[1][1] - value[1][1], 2) +
+                                Math.pow(candidate[1][2] - value[1][2], 2),
+                        );
+                    }),
+                );
+                if (min_dist > this.tint_distance) {
+                    return candidate;
+                }
+                if (min_dist > max_dist) {
+                    max_dist = min_dist;
+                    max_candidate = candidate;
+                }
+            }
+            this.tint_distance = max_dist;
+            return max_candidate;
+        }
     }
 
     // Gets or generates the fill tint for a given key.
     getOrCreateTint(tint_key) {
         if (!this.tint_buffer.has(tint_key)) {
-            this.tint_buffer.set(tint_key, this.randomTint());
+            this.tint_buffer.set(tint_key, this.randomDistantTint());
         }
-        return this.tint_buffer.get(tint_key);
+        return this.tint_buffer.get(tint_key)[0];
     }
 
     // Preload an image. Example usage is
@@ -82,7 +115,7 @@ export class AssetDeck {
             var audio = new Audio();
             audio.src = uri;
             // Setup a hook to store the audio in the buffer
-            audio.onload = () => {
+            audio.oncanplaythrough = () => {
                 console.log(`Asset fetched: ${uri}`);
                 this.audio_buffer.push(audio);
                 const index = this.audio_buffer.length - 1;
@@ -138,10 +171,57 @@ function ChessboardPattern(ctx, canvas, asset_bank, rows, cols, x, y) {
     }
 }
 
+function renderTimer(
+    ctx,
+    timeLeft,
+    x,
+    y,
+    bold,
+    gameStartTime,
+    survivalTime,
+    isDead,
+) {
+    // Show survival time when dead, otherwise show current elapsed time
+    const displayTime = isDead
+        ? survivalTime
+        : gameStartTime
+          ? (Date.now() - gameStartTime) / 1000
+          : 0;
+
+    renderText(
+        canvas.ctx,
+        "black",
+        "20px Consolas",
+        `${displayTime.toFixed(2)}s`,
+        x + 2,
+        y + 2,
+        bold,
+    );
+    renderText(
+        canvas.ctx,
+        "white",
+        "20px Consolas",
+        `${displayTime.toFixed(2)}s`,
+        x,
+        y,
+        bold,
+    );
+}
+
 function renderPlayerStatsMask(ctx, player, asset_bank, x, y) {
-    const maskImage = asset_bank.getSprite(player.mask_frames[player.mask][1]);
+    const maskImage = asset_bank.getSprite(
+        player.tinted_mask_frames[player.mask][1],
+    );
     var size = 30;
     ctx.drawImage(maskImage, x, y - 5 - size / 2, size, size);
+}
+
+function renderPlayerStatsHealthBar(ctx, x, y, health) {
+    // health bar
+    ctx.fillStyle = "red";
+    ctx.fillRect(x + 30, y - 20, 100, 20);
+    ctx.fillStyle = "green";
+    ctx.fillRect(x + 30, y - 20, health, 20);
 }
 
 function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
@@ -158,12 +238,14 @@ function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
         }
     }
 
+    renderPlayerStatsHealthBar(ctx, x, y, player.health);
+
     renderText(
         canvas.ctx,
         "black",
         "20px Consolas",
         playerName || "Offline",
-        x + 40,
+        x + 134,
         y,
         bold,
     );
@@ -172,7 +254,7 @@ function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
         "white",
         "20px Consolas",
         playerName || "Offline",
-        x + 38,
+        x + 132,
         y - 2,
         bold,
     );
@@ -224,7 +306,15 @@ function drawBackground(viewport, asset_bank, rows, cols) {
 }
 
 // HUD
-function drawForeground(canvas, asset_bank, player, other_players) {
+function drawForeground(
+    canvas,
+    asset_bank,
+    player,
+    other_players,
+    gameStartTime,
+    survivalTime,
+    isDead,
+) {
     var leftPadding = 5;
     var topPadding = 25;
 
@@ -256,6 +346,17 @@ function drawForeground(canvas, asset_bank, player, other_players) {
         true,
         asset_bank,
     );
+
+    renderTimer(
+        canvas.ctx,
+        player.game_timer,
+        canvas.width * 0.9,
+        topPadding,
+        true,
+        gameStartTime,
+        survivalTime,
+        isDead,
+    );
 }
 
 class Structure {
@@ -286,7 +387,7 @@ export class GameMap {
     }
 
     draw(dt, viewport, asset_deck) {
-        drawBackground(viewport, asset_deck, this.x_size, this.y_size);
+        drawBackground(viewport, asset_deck, this.y_size, this.x_size);
         this.structures.forEach((s) => {
             viewport.draw(
                 (canvas, x, y) => {
@@ -313,7 +414,7 @@ export class GameMap {
         // right bar
         this.structures.push(
             new Structure(
-                (this.x_size - 1) * this.tile_size,
+                this.x_size * this.tile_size,
                 0,
                 this.tile_size,
                 this.y_size * this.tile_size,
@@ -323,7 +424,7 @@ export class GameMap {
         this.structures.push(
             new Structure(
                 0,
-                (this.y_size - 1) * this.tile_size,
+                this.y_size * this.tile_size,
                 this.x_size * this.tile_size,
                 this.tile_size,
             ),
@@ -336,6 +437,8 @@ export class GameMap {
         if (this.y_size > 0) {
             this.x_size = matrix[0].length;
         }
+
+        console.log(`World map set: ${this.x_size}x${this.y_size}`);
 
         // for each row
         matrix.forEach((row, j) => {
@@ -356,7 +459,6 @@ export class GameMap {
             });
         });
 
-        console.log(matrix);
         this._setBoundaries();
     }
 
@@ -370,6 +472,7 @@ export class GameMap {
                 character.x,
                 character.y,
             );
+
             if (collision !== null) {
                 const update = s.collision_box.determineUpdate(
                     collision,
@@ -407,7 +510,9 @@ export class HUD {
             const x = (p.x / config.TILE_SIZE) * config.MINIMAP_SCALE;
             const y = (p.y / config.TILE_SIZE) * config.MINIMAP_SCALE;
 
-            const currentMask = asset_deck.getSprite(p.mask_frames[p.mask][1]);
+            const currentMask = asset_deck.getSprite(
+                p.tinted_mask_frames[p.mask][1],
+            );
             canvas.ctx.drawImage(
                 currentMask,
                 canvas_x + x,
@@ -421,7 +526,17 @@ export class HUD {
         other_players.forEach(drawPlayerIndicator);
     }
 
-    draw(dt, viewport, asset_deck, player, other_players, game_map) {
+    draw(
+        dt,
+        viewport,
+        asset_deck,
+        player,
+        other_players,
+        game_map,
+        gameStartTime,
+        survivalTime,
+        isDead,
+    ) {
         // important info
         // players are never deleted so the length of other_players will never decrease
         // when a player leaves/ disconnects, they re enter a new player
@@ -429,7 +544,15 @@ export class HUD {
 
         const active_others = other_players.filter((p) => p.active == true);
 
-        drawForeground(viewport.canvas, asset_deck, player, active_others);
+        drawForeground(
+            viewport.canvas,
+            asset_deck,
+            player,
+            active_others,
+            gameStartTime,
+            survivalTime,
+            isDead,
+        );
         // draw the map in the bottom right corner of the canvas
         this.drawMinimap(canvas, game_map, asset_deck, player, active_others);
     }
@@ -467,7 +590,7 @@ export class ViewPort {
     }
 
     // Center the viewport on a given point moving with a given speed.
-    follow(dt, x, y, vx, vy) {
+    follow(dt, game_map, x, y, vx, vy) {
         let move_x = 0;
         let move_y = 0;
 
@@ -493,6 +616,10 @@ export class ViewPort {
         // Clip to the size of the world
         this.x = Math.max(0, this.x);
         this.y = Math.max(0, this.y);
+        const map_height_pixels = (game_map.y_size + 1) * game_map.tile_size;
+        const map_width_pixels = (game_map.x_size + 1) * game_map.tile_size;
+        this.x = Math.min(map_width_pixels - this.width, this.x);
+        this.y = Math.min(map_height_pixels - this.height, this.y);
     }
 }
 

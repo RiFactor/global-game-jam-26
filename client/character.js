@@ -51,13 +51,16 @@ async function loadPlayerSprites(
 //
 // is the jth orientation of the ith mask.
 
-async function loadAllMaskSprites(asset_deck, { character = "player" } = {}) {
+async function loadAllMaskSprites(
+    asset_deck,
+    { character = "player", tint_key = null } = {},
+) {
     const orientations = ["front", "left", "right"];
     const fetchMask = (name) => {
         return orientations.map(async (i) => {
             return asset_deck.fetchImage(
                 `assets/${character}/masks/${name}/${i}.png`,
-                name,
+                tint_key ? tint_key : name,
             );
         });
     };
@@ -87,7 +90,12 @@ async function loadAllMaskSprites(asset_deck, { character = "player" } = {}) {
 class Character {
     // Accepts an array of sprite frames, which it uses to draw itself. These
     // should be `Facing` order (see above).
-    constructor(sprite_frames, mask_frames) {
+    constructor(
+        sprite_frames,
+        mask_frames,
+        tinted_mask_frames,
+        apply_mask_offset,
+    ) {
         this.x = 0;
         this.y = 0;
         this.vx = 0;
@@ -98,12 +106,20 @@ class Character {
         this.sprite_frames = sprite_frames;
         this.mask = 0;
         this.mask_frames = mask_frames;
+        this.tinted_mask_frames = tinted_mask_frames
+            ? tinted_mask_frames
+            : mask_frames;
+        this.apply_mask_offset = apply_mask_offset ? true : false;
         // Orientation is the same as Facing
         this.orientation = Facing.DOWN;
         this.active = true;
+        // Indicates whether they have been got
+        this.alive = true;
+        this.health = 100;
 
         this.timer = 0;
         this.draw_state = DrawSate.STATIONARY;
+        this.has_mask = true;
         this.anim_frame = 0;
         this.frame_delay = 100;
         this.player_id = null;
@@ -140,24 +156,26 @@ class Character {
             this.mask_frames[this.mask][this.orientation],
         );
         const mask_offset_x =
-            this.orientation >= 2
+            this.apply_mask_offset && this.orientation >= 2
                 ? config.MASK_CONFIG[this.mask][1][this.orientation]
                 : 0;
         const mask_offset_y =
-            this.orientation < 2
+            this.apply_mask_offset && this.orientation < 2
                 ? config.MASK_CONFIG[this.mask][1][this.orientation]
                 : 0;
 
         viewport.draw(
             (canvas, x, y) => {
                 canvas.ctx.drawImage(frame, x, y, this.width, this.height);
-                canvas.ctx.drawImage(
-                    mask_frame,
-                    x + mask_offset_x,
-                    y + mask_offset_y,
-                    this.width,
-                    this.height,
-                );
+                if (this.has_mask) {
+                    canvas.ctx.drawImage(
+                        mask_frame,
+                        x + mask_offset_x,
+                        y + mask_offset_y,
+                        this.width,
+                        this.height,
+                    );
+                }
                 if (config.DRAW_COLLISION) {
                     this.collision_box.draw(canvas, x, y);
                 }
@@ -249,8 +267,10 @@ class Character {
         this.orientation = new_state.orientation;
         this.draw_state = new_state.draw_state;
         this.mask = new_state.mask;
+        this.has_mask = new_state.has_mask;
         this.active = new_state.active;
         this.player_id = new_state.player_id;
+        this.health = new_state.health;
     }
 }
 

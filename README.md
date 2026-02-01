@@ -1,17 +1,26 @@
-# <a><img src="client/assets/player/front1.png" width="45"/></a> global-game-jam-26
+# <a><img src="client/assets/player/front1.png" width="45"/></a> Global Game Jam 2026
+
 
 ```
 +--------------------------------------------------------------------------------+
+| 8b   d8           8                                                            |
+| 8YbmdP8 .d88 d88b 8.dP                                                         |
+| 8  "  8 8  8 `Yb. 88b                            Global Game Jam 2026          |
+| 8     8 `Y88 Y88P 8 Yb                           Southampton                   |
+|                                                  Theme of "Mask"               |
+| .d88b.                                           5 Devs                        |
+| 8P  Y8 8d8b. .d88b                               48 Hours                      |
+| 8b  d8 8P Y8 8.dP'                               Some Sleep                    |
+| `Y88P' 8   8 `Y88P                                                             |
 |                                                                                |
-|                                                         Global Game Jam 2026   |
-|                                                         Southampton            |
-|        we havent got a name yet.                        Theme of "Mask"        |
-|        Recommmend one in the gh issue                   5 Devs                 |
-|                                                         48 Hours               |
-|                                                         0 sleep                |
-|                                                                                |
+| .d88b.  w                 8 w                                                  |
+| YPwww. w8ww .d88 8d8b. .d88 w 8d8b. .d88                                       |
+|     d8  8   8  8 8P Y8 8  8 8 8P Y8 8  8                                       |
+| `Y88P'  Y8P `Y88 8   8 `Y88 8 8   8 `Y88                                       |
+|                                     wwdP                                       |
 +--------------------------------------------------------------------------------+
 ```
+
 <table>
 <tr>
 <td>
@@ -32,10 +41,6 @@ Last man standing PvE multiplayer Web browser game, where the objective is to av
 
 ---
 
-Play the latest build [HERE](https://www.youtube.com/watch?v=Aq5WXmQQooo&list=RDAq5WXmQQooo&start_radio=1)! <!-- TODO update with actual game link -->
-or build it yourself.
-
-
 # Build
 You can build this project with docker or make.
 
@@ -55,4 +60,11 @@ then navigate to [localhost:8000](https://localhost:8000) in your browser.
 ```bash
 make
 ```
+
 then navigate to [localhost:8000](https://localhost:8000) in your browser.
+
+
+# credits
+- [ggj](https://globalgamejam.org/games/2026/mask-one-standing-2)
+- [devs](https://github.com/RiFactor/global-game-jam-26/graphs/contributors)
+- [music - ReflexTunes : Game Zone](https://pixabay.com/music/video-games-game-zone-320262/)
