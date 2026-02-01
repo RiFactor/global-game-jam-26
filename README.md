@@ -1,17 +1,26 @@
-# <a><img src="client/assets/player/front1.png" width="45"/></a> global-game-jam-26
+# <a><img src="client/assets/player/front1.png" width="45"/></a> Global Game Jam 2026
+
 
 ```
 +--------------------------------------------------------------------------------+
-|                                                                                |
-|                                                         Global Game Jam 2026   |
-|                                                         Southampton            |
-|        we havent got a name yet.                        Theme of "Mask"        |
-|        Recommmend one in the gh issue                   5 Devs                 |
-|                                                         48 Hours               |
-|                                                         0 sleep                |
-|                                                                                |
+| 8b   d8           8                     .                                      |
+| 8YbmdP8 .d88 d88b 8.dP                  .                                      |
+| 8  "  8 8  8 `Yb. 88b                   .        Global Game Jam 2026          |
+| 8     8 `Y88 Y88P 8 Yb                  .        Southampton                   |
+|                                         .        Theme of "Mask"               |
+| .d88b.                                  .        5 Devs                        |
+| 8P  Y8 8d8b. .d88b                      .        48 Hours                      |
+| 8b  d8 8P Y8 8.dP'                      .        Some Sleep                    |
+| `Y88P' 8   8 `Y88P                      .                                      |
+|                                         .                                      |
+| .d88b.  w                 8 w           .                                      |
+| YPwww. w8ww .d88 8d8b. .d88 w 8d8b. .d88.                                      |
+|     d8  8   8  8 8P Y8 8  8 8 8P Y8 8  8.                                      |
+| `Y88P'  Y8P `Y88 8   8 `Y88 8 8   8 `Y88.                                      |
+|                                     wwdP.                                      |
 +--------------------------------------------------------------------------------+
 ```
+
 <table>
 <tr>
 <td>
