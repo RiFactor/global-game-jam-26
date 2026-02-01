@@ -5,6 +5,8 @@ const FAST = 0.24;
 const CANVAS_HEIGHT = 672;
 const CANVAS_WIDTH = 864;
 
+const WORLD_MAP = "/assets/maps/ascii-map-2.txt";
+
 // Make this bigger to make everything bigger
 // make it smaller to make everything smaller
 const SCALE = 48;
@@ -64,4 +66,5 @@ export {
     CANVAS_WIDTH,
     CANVAS_HEIGHT,
     SHOW_MESSAGE_TIMER,
+    WORLD_MAP,
 };

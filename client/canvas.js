@@ -387,7 +387,7 @@ export class GameMap {
     }
 
     draw(dt, viewport, asset_deck) {
-        drawBackground(viewport, asset_deck, this.x_size, this.y_size);
+        drawBackground(viewport, asset_deck, this.y_size, this.x_size);
         this.structures.forEach((s) => {
             viewport.draw(
                 (canvas, x, y) => {
@@ -414,7 +414,7 @@ export class GameMap {
         // right bar
         this.structures.push(
             new Structure(
-                (this.x_size - 1) * this.tile_size,
+                this.x_size * this.tile_size,
                 0,
                 this.tile_size,
                 this.y_size * this.tile_size,
@@ -424,7 +424,7 @@ export class GameMap {
         this.structures.push(
             new Structure(
                 0,
-                (this.y_size - 1) * this.tile_size,
+                this.y_size * this.tile_size,
                 this.x_size * this.tile_size,
                 this.tile_size,
             ),
@@ -437,6 +437,8 @@ export class GameMap {
         if (this.y_size > 0) {
             this.x_size = matrix[0].length;
         }
+
+        console.log(`World map set: ${this.x_size}x${this.y_size}`);
 
         // for each row
         matrix.forEach((row, j) => {
@@ -457,7 +459,6 @@ export class GameMap {
             });
         });
 
-        console.log(matrix);
         this._setBoundaries();
     }
 
@@ -589,7 +590,7 @@ export class ViewPort {
     }
 
     // Center the viewport on a given point moving with a given speed.
-    follow(dt, x, y, vx, vy) {
+    follow(dt, game_map, x, y, vx, vy) {
         let move_x = 0;
         let move_y = 0;
 
@@ -615,6 +616,10 @@ export class ViewPort {
         // Clip to the size of the world
         this.x = Math.max(0, this.x);
         this.y = Math.max(0, this.y);
+        const map_height_pixels = (game_map.y_size + 1) * game_map.tile_size;
+        const map_width_pixels = (game_map.x_size + 1) * game_map.tile_size;
+        this.x = Math.min(map_width_pixels - this.width, this.x);
+        this.y = Math.min(map_height_pixels - this.height, this.y);
     }
 }
 

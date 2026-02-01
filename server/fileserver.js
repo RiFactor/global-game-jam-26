@@ -500,5 +500,5 @@ class ServerState {
 
 const server = http.createServer(requestHandler);
 const state = new ServerState(server, new ws.WebSocketServer({ server }));
-state.loadMap("client/assets/maps/asscii-map1.txt");
+state.loadMap(`client${config.WORLD_MAP}`);
 state.bind(PORT);

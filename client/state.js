@@ -102,9 +102,7 @@ class State {
         const character_masks = all_assets[1];
         const enemy_masks = all_assets[2];
 
-        const map_index = await this.assets.fetchFile(
-            "/assets/maps/asscii-map1.txt",
-        );
+        const map_index = await this.assets.fetchFile(config.WORLD_MAP);
         // set and load the game map
         this.game_map.setMap(this.assets.file_buffer[map_index]);
 
@@ -405,6 +403,7 @@ class State {
 
         this.viewport.follow(
             dt,
+            this.game_map,
             this.player.x,
             this.player.y,
             this.player.vx,
