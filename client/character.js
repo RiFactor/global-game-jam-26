@@ -16,15 +16,6 @@ const DrawSate = Object.freeze({
     MOVING: 1,
 });
 
-// Name to offsets
-const mask_config = [
-    ["arlecchino", [0, 0, 0, 0]],
-    ["il-dottore", [0, 0, 0, 0]],
-    ["scaramouche", [0, 0, -10, 10]],
-];
-
-const mask_count = mask_config.length - 1;
-
 // Returns an array of integer indexes for the `asset_deck`.
 // Call as
 //
@@ -72,7 +63,7 @@ async function loadAllMaskSprites(asset_deck, { character = "player" } = {}) {
     };
 
     var all_promises = new Array();
-    mask_config.forEach((conf) => {
+    config.MASK_CONFIG.forEach((conf) => {
         all_promises = all_promises.concat(fetchMask(conf[0]));
     }); 
 
@@ -84,7 +75,7 @@ async function loadAllMaskSprites(asset_deck, { character = "player" } = {}) {
 
     // split back up into their characters
     var masks = new Array();
-    for (let i = 0; i <= mask_count; i += 1) {
+    for (let i = 0; i <= config.MASK_COUNT; i += 1) {
         // get the masks and add in the back index in the right location
         let m = all_masks.slice(i * 3, i * 3 + 3);
         m.splice(0, 0, back);
@@ -148,8 +139,8 @@ class Character {
         const mask_frame = asset_deck.getSprite(
             this.mask_frames[this.mask][this.orientation],
         );
-        const mask_offset_x = this.orientation >= 2 ? mask_config[this.mask][1][this.orientation] : 0;
-        const mask_offset_y = this.orientation < 2 ? mask_config[this.mask][1][this.orientation] : 0;
+        const mask_offset_x = this.orientation >= 2 ? config.MASK_CONFIG[this.mask][1][this.orientation] : 0;
+        const mask_offset_y = this.orientation < 2 ? config.MASK_CONFIG[this.mask][1][this.orientation] : 0;
 
         viewport.draw(
             (canvas, x, y) => {
@@ -166,12 +157,12 @@ class Character {
 
     prevMask() {
         console.log("prev mask");
-        this.mask == 0 ? (this.mask = mask_count) : (this.mask -= 1);
-        console.log("next mask", "count:", mask_count, "mask:", this.mask);
+        this.mask == 0 ? (this.mask = config.MASK_COUNT) : (this.mask -= 1);
+        console.log("next mask", "count:", config.MASK_COUNT, "mask:", this.mask);
     }
 
     nextMask() {
-        this.mask == mask_count ? (this.mask = 0) : (this.mask += 1);
+        this.mask == config.MASK_COUNT ? (this.mask = 0) : (this.mask += 1);
     }
 
     update(dt) {

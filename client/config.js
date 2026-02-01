@@ -15,6 +15,14 @@ const DRAW_COLLISION = true;
 
 const URI = "ws://127.0.0.1:8000/";
 
+const MASK_CONFIG = [
+    ["arlecchino", [0, 0, 0, 0]],
+    ["il-dottore", [0, 0, 0, 0]],
+    ["scaramouche", [0, 0, -10, 10]],
+];
+
+const MASK_COUNT = MASK_CONFIG.length - 1;
+
 export {
     SLOW,
     MEDIUM,
@@ -24,4 +32,6 @@ export {
     TILE_SIZE,
     SCALE,
     VIEWPORT_BUFFER,
+    MASK_CONFIG,
+    MASK_COUNT
 };
