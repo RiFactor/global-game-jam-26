@@ -103,7 +103,7 @@ class NonPlayerCharacter {
                 continue;
             }
 
-            if (!p.state.active) {
+            if (!p.state.active || p.state.health < 0) {
                 continue;
             }
 
@@ -144,7 +144,7 @@ class NonPlayerCharacter {
             }
 
             // Active check
-            if (!target.state.active) {
+            if (!target.state.active || target.state.health <= 0) {
                 this.target = undefined;
             }
 

@@ -137,6 +137,11 @@ class State {
 
         this.player.has_mask = false;
 
+        // Start the server synchronisation loop
+        setInterval(() => {
+            this.syncServer();
+        }, 1000 / 10);
+
         console.log("Game ready");
     }
 
@@ -374,8 +379,10 @@ class State {
             this.player.vx,
             this.player.vy,
         );
+    }
 
-        // After updating the movement, send updated position to server
+    // Send updates to the server
+    syncServer() {
         this.conn.send(this.player);
     }
 
