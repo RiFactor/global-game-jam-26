@@ -153,12 +153,16 @@ function renderPlayerStatsMask(ctx, player, asset_bank, x, y) {
 function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
     renderPlayerStatsMask(ctx, player, asset_bank, x, y);
 
-    var playerName =
-        player.player_id &&
-        typeof player.player_id === "string" &&
-        player.player_id.includes("f:")
-            ? String(player.player_id.split("f:")[1])
-            : "";
+    var playerName = "";
+    if (player.player_id && typeof player.player_id === "string") {
+        // Handle IPv6-mapped IPv4 addresses (e.g., "::ffff:192.168.1.1:12345")
+        if (player.player_id.includes("f:")) {
+            playerName = String(player.player_id.split("f:")[1]);
+        } else {
+            // Handle regular IPv4 addresses (e.g., "127.0.0.1:12345")
+            playerName = player.player_id;
+        }
+    }
 
     renderText(
         canvas.ctx,

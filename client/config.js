@@ -13,7 +13,14 @@ const TILE_SIZE = 96;
 
 const DRAW_COLLISION = false;
 
-const URI = "ws://127.0.0.1:8000/";
+// Use the current hostname instead of hardcoded localhost
+// This allows mobile devices to connect to the server
+// Fallback to 127.0.0.1 if hostname is empty or if running in Node.js
+const hostname =
+    typeof window !== "undefined"
+        ? window.location.hostname || "127.0.0.1"
+        : "127.0.0.1";
+const URI = `ws://${hostname}:8000/`;
 
 const MASK_CONFIG = [
     ["arlecchino", [0, 0, 0, 0]],
