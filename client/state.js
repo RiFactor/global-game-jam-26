@@ -153,7 +153,10 @@ class State {
         // Leaderboard update
         if (message.leaderboard !== undefined) {
             this.leaderboard = message.leaderboard;
-            if (message.player_rank && message.player_rank.player_id === this.player_id) {
+            if (
+                message.player_rank &&
+                message.player_rank.player_id === this.player_id
+            ) {
                 this.playerRank = message.player_rank.rank;
             }
             return;
@@ -261,7 +264,7 @@ class State {
             this.game_map,
             this.gameStartTime,
             this.survivalTime,
-            this.game_state === GameState.GAME_OVER
+            this.game_state === GameState.GAME_OVER,
         );
 
         if (this.show_message > 0) {
@@ -446,9 +449,17 @@ class State {
         if (this.playerRank) {
             this.canvas.ctx.fillStyle = "black";
             this.canvas.ctx.font = "bold 30px Consolas";
-            this.canvas.ctx.fillText(`Your rank: #${this.playerRank}`, 102, 352);
+            this.canvas.ctx.fillText(
+                `Your rank: #${this.playerRank}`,
+                102,
+                352,
+            );
             this.canvas.ctx.fillStyle = "yellow";
-            this.canvas.ctx.fillText(`Your rank: #${this.playerRank}`, 100, 350);
+            this.canvas.ctx.fillText(
+                `Your rank: #${this.playerRank}`,
+                100,
+                350,
+            );
         }
 
         const currentMask = this.assets.getSprite(
@@ -464,15 +475,16 @@ class State {
 
         // Display leaderboard
         if (this.leaderboard.length > 0) {
-
             this.canvas.ctx.font = "20px Consolas";
             this.leaderboard.forEach((entry, index) => {
                 const rank = index + 1;
                 const text = `${rank}. ${entry.player_id}: ${entry.time.toFixed(2)}s`;
-                
+
                 // Highlight if this is the current player
                 const isCurrentPlayer = entry.player_id === this.player_id;
-                this.canvas.ctx.fillStyle = isCurrentPlayer ? "yellow" : "white";
+                this.canvas.ctx.fillStyle = isCurrentPlayer
+                    ? "yellow"
+                    : "white";
                 this.canvas.ctx.fillText(text, 120, 380 + index * 30);
                 this.canvas.ctx.strokeStyle = "black";
                 this.canvas.ctx.strokeText(text, 120, 380 + index * 30);
@@ -485,7 +497,9 @@ class State {
         // Calculate final survival time in seconds
         if (this.gameStartTime) {
             this.survivalTime = (Date.now() - this.gameStartTime) / 1000;
-            console.log(`You survived for ${this.survivalTime.toFixed(2)} seconds`);
+            console.log(
+                `You survived for ${this.survivalTime.toFixed(2)} seconds`,
+            );
             // Send survival time to server for leaderboard
             this.conn.sendDeath(this.survivalTime);
         }

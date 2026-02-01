@@ -225,8 +225,14 @@ class PlayerHandler {
         if (msg.death !== undefined) {
             if (msg.death == 1) {
                 this.state.survival_time = msg.survival_time;
-                console.log(`Player ${this.state.player_id} died with time ${msg.survival_time.toFixed(2)}s`);
-                return { type: 'death', player_id: this.state.player_id, time: msg.survival_time };
+                console.log(
+                    `Player ${this.state.player_id} died with time ${msg.survival_time.toFixed(2)}s`,
+                );
+                return {
+                    type: "death",
+                    player_id: this.state.player_id,
+                    time: msg.survival_time,
+                };
             }
         }
         if (msg.content !== undefined) {
@@ -302,17 +308,23 @@ class ServerState {
 
         socket.on("message", async (data) => {
             const result = await player.handleMessage(data);
-            if (result && result.type === 'death') {
+            if (result && result.type === "death") {
                 // Add to leaderboard
-                this.leaderboard.push({ player_id: result.player_id, time: result.time });
+                this.leaderboard.push({
+                    player_id: result.player_id,
+                    time: result.time,
+                });
                 // Sort by time descending (highest time first)
                 this.leaderboard.sort((a, b) => b.time - a.time);
                 // Save to file
                 this.saveLeaderboard();
                 // Find player rank
-                const playerRank = this.leaderboard.findIndex(entry => 
-                    entry.player_id === result.player_id && entry.time === result.time
-                ) + 1;
+                const playerRank =
+                    this.leaderboard.findIndex(
+                        (entry) =>
+                            entry.player_id === result.player_id &&
+                            entry.time === result.time,
+                    ) + 1;
                 // Broadcast updated leaderboard to all players with the dead player's rank
                 this.broadcastLeaderboard(result.player_id, playerRank);
             }
@@ -340,12 +352,14 @@ class ServerState {
         try {
             if (fs.existsSync(LEADERBOARD_FILE)) {
                 const data = fs.readFileSync(LEADERBOARD_FILE, "utf8");
-                const lines = data.split("\n").filter(line => line.trim());
-                this.leaderboard = lines.map(line => {
+                const lines = data.split("\n").filter((line) => line.trim());
+                this.leaderboard = lines.map((line) => {
                     const [player_id, time] = line.split(",");
                     return { player_id, time: parseFloat(time) };
                 });
-                console.log(`Loaded ${this.leaderboard.length} entries from leaderboard`);
+                console.log(
+                    `Loaded ${this.leaderboard.length} entries from leaderboard`,
+                );
             }
         } catch (err) {
             console.error("Error loading leaderboard:", err);
@@ -355,9 +369,9 @@ class ServerState {
 
     saveLeaderboard() {
         try {
-            const data = this.leaderboard.map(entry => 
-                `${entry.player_id},${entry.time}`
-            ).join("\n");
+            const data = this.leaderboard
+                .map((entry) => `${entry.player_id},${entry.time}`)
+                .join("\n");
             fs.writeFileSync(LEADERBOARD_FILE, data, "utf8");
             console.log("Leaderboard saved to file");
         } catch (err) {
@@ -444,7 +458,9 @@ class ServerState {
     async broadcastLeaderboard(deadPlayerId = null, playerRank = null) {
         const message = JSON.stringify({
             leaderboard: this.leaderboard.slice(0, 10), // Top 10
-            player_rank: deadPlayerId ? { player_id: deadPlayerId, rank: playerRank } : null,
+            player_rank: deadPlayerId
+                ? { player_id: deadPlayerId, rank: playerRank }
+                : null,
         });
 
         this.players.forEach((player) => {
