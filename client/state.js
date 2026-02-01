@@ -11,6 +11,17 @@ import {
 
 import { Connection } from "./client.js";
 
+const GameState = Object.freeze({
+    // During the game
+    PLAYING: 0,
+    // When the game ends
+    GAME_OVER: 1,
+    // Before the game starts
+    LOBBY: 2,
+    // Ready to start
+    READY: 3,
+});
+
 class State {
     constructor(canvas, connection) {
         this.x = 10;
@@ -25,6 +36,8 @@ class State {
         // Set the currently active canvas
         this.canvas = this._main_canvas;
         this.assets = new AssetDeck();
+
+        this.game_state = GameState.LOBBY;
 
         // This is just example code for now.
         this.characters = new Array();
@@ -50,6 +63,10 @@ class State {
         this.key_left = false;
         this.key_right = false;
 
+        // Rudimentary: used to display messages temporarily on the screen
+        this.show_message = 0;
+        this.message = "";
+
         // Functions for creating a new character and new player
         this.addPlayer = undefined;
         this.addCharacter = undefined;
@@ -57,22 +74,25 @@ class State {
 
     // Entry point to start the game
     async start() {
-        const all_assets = await Promise.all([
+        const asset_promises = [
             loadPlayerSprites(this.assets),
-            loadPlayerSprites(this.assets, {
-                character: "enemy",
-                tint_key: "arlecchino",
-            }),
             loadAllMaskSprites(this.assets),
             loadAllMaskSprites(this.assets, {
                 character: "enemy",
-                mask_name: "arlecchino",
             }),
-        ]);
+        ];
+        config.MASK_CONFIG.forEach((conf) => {
+            asset_promises.push(
+                loadPlayerSprites(this.assets, {
+                    character: "enemy",
+                    tint_key: conf[0],
+                }),
+            );
+        });
+        const all_assets = await Promise.all(asset_promises);
         const character_sprites = all_assets[0];
-        const enemy_sprites = all_assets[1];
-        const character_masks = all_assets[2];
-        const enemy_masks = all_assets[3];
+        const character_masks = all_assets[1];
+        const enemy_masks = all_assets[2];
 
         const map_index = await this.assets.fetchFile(
             "/assets/maps/asscii-map1.txt",
@@ -80,13 +100,27 @@ class State {
         // set and load the game map
         this.game_map.setMap(this.assets.file_buffer[map_index]);
 
-        this.addCharacter = () => {
-            this.characters.push(new Character(enemy_sprites, enemy_masks));
+        this.addCharacter = (character) => {
+            this.characters.push(
+                new Character(all_assets[3 + character.mask], enemy_masks),
+            );
         };
 
-        this.addPlayer = () => {
+        this.addPlayer = async (character) => {
+            let player_assets = await Promise.all([
+                loadPlayerSprites(this.assets, {
+                    tint_key: character.player_id,
+                }),
+                loadAllMaskSprites(this.assets, {
+                    tint_key: character.player_id,
+                }),
+            ]);
             this.other_players.push(
-                new Character(character_sprites, character_masks),
+                new Character(
+                    player_assets[0],
+                    character_masks,
+                    player_assets[1],
+                ),
             );
         };
 
@@ -101,10 +135,26 @@ class State {
             this.onServerMessage(msg),
         );
 
+        this.player.has_mask = false;
+
+        // Start the server synchronisation loop
+        setInterval(() => {
+            this.syncServer();
+        }, 1000 / 10);
+
         console.log("Game ready");
     }
 
+    // Called when a websocket message comes back from the server
     onServerMessage(message) {
+        // Game started?
+        if (message.start_game !== undefined) {
+            this.show_message = config.SHOW_MESSAGE_TIMER;
+            this.message = "Hdie!";
+            this.game_state = GameState.PLAYING;
+            return;
+        }
+
         // Get the player ID
         if (message.player_id !== undefined) {
             console.log(`Player ID set to ${message.player_id}`);
@@ -116,14 +166,17 @@ class State {
         // Update the characters (enemies)
         if (message.characters !== undefined) {
             var n_char = this.characters.length;
+            let curr_characters_length = this.characters.length;
             let new_characters =
-                message.characters.length - this.characters.length;
+                message.characters.length - curr_characters_length;
 
             if (new_characters < 0) {
                 console.error("Missing characters");
             } else if (new_characters > 0) {
                 for (let i = 0; i < new_characters; i++) {
-                    this.addCharacter();
+                    this.addCharacter(
+                        message.characters[curr_characters_length + i],
+                    );
                 }
             }
 
@@ -139,14 +192,13 @@ class State {
                 (p) => p.player_id != this.player_id,
             );
             var n_players = this.other_players.length;
-            let new_players =
-                message.players.length - this.other_players.length;
+            let new_players = message.players.length - n_players;
 
             if (new_players < 0) {
                 console.error("Missing players");
             } else if (new_players > 0) {
                 for (let i = 0; i < new_players; i++) {
-                    this.addPlayer();
+                    this.addPlayer(message.players[n_players + i]);
                 }
             }
 
@@ -155,6 +207,14 @@ class State {
                 this.other_players[i].setState(message.players[i]);
             }
         }
+    }
+
+    writeMessage(text, x, y) {
+        this.canvas.ctx.fillStyle = "green";
+        this.canvas.ctx.font = "bold 42px Consolas";
+        this.canvas.ctx.fillText(text, x, y);
+        this.canvas.ctx.strokeStyle = "black";
+        this.canvas.ctx.strokeText(text, x, y);
     }
 
     // Drawing function. This is automatically called by
@@ -171,6 +231,13 @@ class State {
         this.characters.forEach((c) => {
             c.draw(dt, this.viewport, this.assets);
         });
+
+        if (this.game_state == GameState.LOBBY) {
+            this.writeMessage("Rpess `e` or `q` to waer mask", 100, 200);
+            // Before the game starts, don't draw a HUD.
+            return;
+        }
+
         this.hud.draw(
             dt,
             this.viewport,
@@ -179,10 +246,26 @@ class State {
             this.other_players,
             this.game_map,
         );
+
+        if (this.show_message > 0) {
+            this.show_message -= dt;
+            this.writeMessage(this.message, 100, 200);
+        }
+
+        if (this.game_state == GameState.GAME_OVER) {
+            this.drawGameOver();
+        }
     }
 
     // This triggers as a callback.
     onKey(e, active) {
+        if (this.game_state == GameState.GAME_OVER) {
+            this.key_right = false;
+            this.key_up = false;
+            this.key_down = false;
+            this.key_left = false;
+            return;
+        }
         switch (e.key) {
             case "d":
             case "D":
@@ -214,13 +297,17 @@ class State {
                 break;
             case "e":
             case "E":
-                if (active) {
+                if (this.game_state == GameState.LOBBY) {
+                    this.setPlayerReady();
+                } else if (active) {
                     this.player.nextMask();
                 }
                 break;
             case "q":
             case "Q":
-                if (active) {
+                if (this.game_state == GameState.LOBBY) {
+                    this.setPlayerReady();
+                } else if (active) {
                     this.player.prevMask();
                 }
                 break;
@@ -229,12 +316,22 @@ class State {
         }
     }
 
+    setPlayerReady() {
+        this.player.has_mask = true;
+        this.game_state = GameState.READY;
+        // notify the server that we are ready
+        this.conn.sendReady();
+    }
+
     // Called whenever the window is resized.
     onResize() {
         onResize(this.canvas);
     }
 
     update(dt) {
+        if (this.game_state == GameState.GAME_OVER) {
+            return;
+        }
         this.player.updateKeys(
             this.key_up,
             this.key_down,
@@ -245,21 +342,35 @@ class State {
         // check collisions with geometry
         this.game_map.collide(this.player);
 
-        this.characters.forEach((c) => {
-            c.update(dt);
-            const collide = c.collision_box.collide(
-                c.x,
-                c.y,
-                this.player.collision_box,
-                this.player.x,
-                this.player.y,
-            );
-            if (collide !== null) {
-                console.log("Hello World");
-            }
-        });
+        if (this.game_state == GameState.PLAYING) {
+            // Work out player-npc collisions
+            this.characters.forEach((c) => {
+                c.update(dt);
+                const collide = c.collision_box.collide(
+                    c.x,
+                    c.y,
+                    this.player.collision_box,
+                    this.player.x,
+                    this.player.y,
+                );
+                if (collide !== null) {
+                    if (this.player.mask == c.mask) {
+                        this.player.health -= config.DAMAGE_RATE * dt;
+                        console.log(this.player.health);
+                        if (this.player.health < 0) {
+                            this.gameOver();
+                        }
+                    }
+                }
+            });
+        }
 
         this.player.update(dt);
+
+        // Update other players
+        this.other_players.forEach((p) => {
+            p.update(dt);
+        });
 
         this.viewport.follow(
             dt,
@@ -268,9 +379,49 @@ class State {
             this.player.vx,
             this.player.vy,
         );
+    }
 
-        // After updating the movement, send updated position to server
+    // Send updates to the server
+    syncServer() {
         this.conn.send(this.player);
+    }
+
+    drawGameOver() {
+        const drawText = (color, offset) => {
+            this.canvas.ctx.fillStyle = color;
+            this.canvas.ctx.font = "bold 80px Consolas";
+            this.canvas.ctx.fillText(
+                "Htey fuond oyu",
+                100 + offset,
+                200 + offset,
+            );
+            this.canvas.ctx.strokeStyle = "black";
+            this.canvas.ctx.strokeText(
+                "Htey fuond oyu",
+                100 + offset,
+                200 + offset,
+            );
+        };
+        drawText("black", 15);
+        drawText("red", 10);
+        drawText("black", 5);
+        drawText("red", 0);
+
+        const currentMask = this.assets.getSprite(
+            this.player.mask_frames[this.mask][1],
+        );
+        this.canvas.ctx.drawImage(
+            currentMask,
+            this.canvas.width / 2 - 144,
+            this.canvas.height / 2,
+            288,
+            288,
+        );
+    }
+
+    gameOver() {
+        this.game_state = GameState.GAME_OVER;
+        // notify the server
     }
 }
 

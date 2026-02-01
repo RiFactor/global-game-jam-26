@@ -60,10 +60,12 @@ class CharacterState {
     y = 0;
     vx = 0;
     vy = 0;
-    orientation = 0;
-    draw_state = 0;
+    orientation = 1;
+    draw_state = 1;
     mask = 0;
     active = true;
+    has_mask = false;
+    health = 0;
 }
 
 class NonPlayerCharacter {
@@ -101,7 +103,7 @@ class NonPlayerCharacter {
                 continue;
             }
 
-            if (!p.state.active) {
+            if (!p.state.active || p.state.health < 0) {
                 continue;
             }
 
@@ -142,7 +144,7 @@ class NonPlayerCharacter {
             }
 
             // Active check
-            if (!target.state.active) {
+            if (!target.state.active || target.state.health <= 0) {
                 this.target = undefined;
             }
 
@@ -206,18 +208,30 @@ class PlayerHandler {
         this.socket = socket;
         this.state = new CharacterState();
         this.state.player_id = player_id;
+        this.ready = false;
     }
 
     // Update the player state from an incoming message.
     async handleMessage(data) {
-        const msg = JSON.parse(data).content;
-        this.state.x = msg.x;
-        this.state.y = msg.y;
-        this.state.vx = msg.vx;
-        this.state.vy = msg.vy;
-        this.state.orientation = msg.orientation;
-        this.state.draw_state = msg.draw_state;
-        this.state.mask = msg.mask;
+        const msg = JSON.parse(data);
+        if (msg.ready !== undefined) {
+            if (msg.ready == 1) {
+                console.log(`Player ${this.state.player_id} is ready`);
+                this.ready = true;
+            }
+        }
+        if (msg.content !== undefined) {
+            const content = msg.content;
+            this.state.x = content.x;
+            this.state.y = content.y;
+            this.state.vx = content.vx;
+            this.state.vy = content.vy;
+            this.state.orientation = content.orientation;
+            this.state.draw_state = content.draw_state;
+            this.state.mask = content.mask;
+            this.state.has_mask = content.has_mask;
+            this.state.health = content.health;
+        }
     }
 }
 
@@ -228,22 +242,21 @@ class ServerState {
         this.server = server;
         this.websocket_server = websocket_server;
 
+        this.game_running = false;
+
         this.map_width_tiles = 0;
         this.map_height_tiles = 0;
 
-        this.spawn_round = 1;
-        this.spawn_frequency = 5;
-        this.spawn_increment = 20;
+        this.spawn_frequency = config.SPAWN_FREQUENCY;
+        this.spawn_increment = config.SPAWN_INCREMENT;
     }
 
     newNPC() {
         var npc = new NonPlayerCharacter();
-        npc.state.vx = (Math.random() - 0.5) * 0.1;
-        npc.state.vy = (Math.random() - 0.5) * 0.1;
         npc.speed *= utils.gaussianRandom(1.0, 0.1);
-        npc.state.draw_state = 1;
         // TODO: bump this number when we add more masks
         npc.state.mask = utils.randomSelect([0, 1, 2]);
+        npc.state.has_mask = true;
 
         npc.state.x =
             Math.random() * (this.map_width_tiles - 1) * config.TILE_SIZE +
@@ -296,10 +309,64 @@ class ServerState {
         }
     }
 
+    // Called as the update tick
+    updateGameState(dt) {
+        if (this.game_running) {
+            this.updateNPCs(dt);
+        } else {
+            // wait for everyone to be ready
+            var all_ready = true;
+            var some_active = false;
+            for (const p of this.players) {
+                if (p.state.active) {
+                    some_active = true;
+                    if (!p.ready) {
+                        all_ready = false;
+                        break;
+                    }
+                }
+            }
+            if (some_active && all_ready) {
+                this.startGame();
+            }
+        }
+    }
+
+    // Called once when the game starts
+    startGame() {
+        console.log("All players are ready. Starting game!");
+
+        // Notify all players to set state to playing
+        const message = JSON.stringify({
+            start_game: 1,
+        });
+        this.players.forEach((player) => {
+            player.socket.send(message);
+        });
+
+        // Enable all NPC animations
+        this.npcs.forEach((c) => {
+            c.state.draw_state = 1;
+        });
+
+        // Setup the interval to spawn new NPCs
+        setInterval(async () => {
+            const spawn_amount = utils.gaussianRandom(
+                this.spawn_increment,
+                1 * Math.sqrt(this.spawn_increment),
+            );
+
+            for (let i = 0; i < spawn_amount; i += 1) {
+                this.newNPC();
+            }
+        }, 1000 * this.spawn_frequency);
+
+        this.game_running = true;
+    }
+
     updateNPCs(dt) {
         this.npcs.forEach((c) => {
             c.onstepUpdates(this.players);
-
             c.state.x += c.state.vx * dt;
             c.state.y += c.state.vy * dt;
         });
@@ -328,11 +395,13 @@ class ServerState {
         for (let i = 0; i < 48; i += 1) {
             this.newNPC();
         }
+        // set them all stationary
+        this.npcs.forEach((c) => (c.state.draw_state = 0));
 
         var previous_time = Date.now();
         setInterval(async () => {
             const now = Date.now();
-            this.updateNPCs(now - previous_time);
+            this.updateGameState(now - previous_time);
             previous_time = now;
         }, 1000 / 30); // call 30 times a second
 
@@ -340,20 +409,6 @@ class ServerState {
         setInterval(async () => {
             await this.broadcastUpdates();
         }, 1000 / 10); // call 10 times a second
-
-        // Periodically spawn new NPCs
-        setInterval(async () => {
-            const spawn_amount = utils.gaussianRandom(
-                this.spawn_round,
-                1 * Math.sqrt(this.spawn_round),
-            );
-
-            this.spawn_round += this.spawn_increment;
-
-            for (let i = 0; i < spawn_amount; i += 1) {
-                this.newNPC();
-            }
-        }, 1000 * this.spawn_frequency);
     }
 }
 

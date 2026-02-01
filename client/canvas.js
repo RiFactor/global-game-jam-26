@@ -9,12 +9,7 @@ export class AssetDeck {
         this.audio_buffer = new Array();
         this.file_buffer = new Array();
         this.tint_buffer = new Map();
-    }
-
-    gaussianRandom() {
-        const u = 1 - Math.random();
-        const v = Math.random();
-        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        this.tint_distance = 130;
     }
 
     toDoubleHex(number) {
@@ -27,27 +22,59 @@ export class AssetDeck {
     }
 
     randomTint() {
-        var r = Math.abs(this.gaussianRandom());
-        var g = Math.abs(this.gaussianRandom());
-        var b = Math.abs(this.gaussianRandom());
+        var r = Math.abs(utils.gaussianRandom());
+        var g = Math.abs(utils.gaussianRandom());
+        var b = Math.abs(utils.gaussianRandom());
         var normalisation = 255.0 / Math.sqrt(r * r + g * g + b * b);
         var normalised_r = Math.round(r * normalisation);
         var normalised_g = Math.round(g * normalisation);
         var normalised_b = Math.round(b * normalisation);
-        return (
+        return [
             "#" +
-            this.toDoubleHex(normalised_r) +
-            this.toDoubleHex(normalised_g) +
-            this.toDoubleHex(normalised_b)
-        );
+                this.toDoubleHex(normalised_r) +
+                this.toDoubleHex(normalised_g) +
+                this.toDoubleHex(normalised_b),
+            [normalised_r, normalised_g, normalised_b],
+        ];
+    }
+
+    // Try to keep the tints quite different
+    randomDistantTint() {
+        if (this.tint_buffer.size == 0) {
+            return this.randomTint();
+        } else {
+            var max_dist = -1;
+            var max_candidate = null;
+            for (let i = 1; i <= 3; i++) {
+                let candidate = this.randomTint();
+                let min_dist = Math.min(
+                    ...this.tint_buffer.values().map((value) => {
+                        return Math.sqrt(
+                            Math.pow(candidate[1][0] - value[1][0], 2) +
+                                Math.pow(candidate[1][1] - value[1][1], 2) +
+                                Math.pow(candidate[1][2] - value[1][2], 2),
+                        );
+                    }),
+                );
+                if (min_dist > this.tint_distance) {
+                    return candidate;
+                }
+                if (min_dist > max_dist) {
+                    max_dist = min_dist;
+                    max_candidate = candidate;
+                }
+            }
+            this.tint_distance = max_dist;
+            return max_candidate;
+        }
     }
 
     // Gets or generates the fill tint for a given key.
     getOrCreateTint(tint_key) {
         if (!this.tint_buffer.has(tint_key)) {
-            this.tint_buffer.set(tint_key, this.randomTint());
+            this.tint_buffer.set(tint_key, this.randomDistantTint());
         }
-        return this.tint_buffer.get(tint_key);
+        return this.tint_buffer.get(tint_key)[0];
     }
 
     // Preload an image. Example usage is
@@ -145,9 +172,19 @@ function ChessboardPattern(ctx, canvas, asset_bank, rows, cols, x, y) {
 }
 
 function renderPlayerStatsMask(ctx, player, asset_bank, x, y) {
-    const maskImage = asset_bank.getSprite(player.mask_frames[player.mask][1]);
+    const maskImage = asset_bank.getSprite(
+        player.tinted_mask_frames[player.mask][1],
+    );
     var size = 30;
     ctx.drawImage(maskImage, x, y - 5 - size / 2, size, size);
+}
+
+function renderPlayerStatsHealthBar(ctx, x, y, health) {
+    // health bar
+    ctx.fillStyle = "red";
+    ctx.fillRect(x + 30, y - 20, 100, 20);
+    ctx.fillStyle = "green";
+    ctx.fillRect(x + 30, y - 20, health, 20);
 }
 
 function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
@@ -164,12 +201,14 @@ function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
         }
     }
 
+    renderPlayerStatsHealthBar(ctx, x, y, player.health);
+
     renderText(
         canvas.ctx,
         "black",
         "20px Consolas",
         playerName || "Offline",
-        x + 40,
+        x + 134,
         y,
         bold,
     );
@@ -178,7 +217,7 @@ function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
         "white",
         "20px Consolas",
         playerName || "Offline",
-        x + 38,
+        x + 132,
         y - 2,
         bold,
     );
@@ -214,8 +253,8 @@ function renderText(ctx, color, font = "30px Arial", text, x, y, bold) {
 }
 
 export function onResize(canvas) {
-    canvas.width = 800;
-    canvas.height = 600;
+    canvas.width = config.CANVAS_WIDTH;
+    canvas.height = config.CANVAS_HEIGHT;
 }
 
 function drawBackground(viewport, asset_bank, rows, cols) {
@@ -376,6 +415,7 @@ export class GameMap {
                 character.x,
                 character.y,
             );
+
             if (collision !== null) {
                 const update = s.collision_box.determineUpdate(
                     collision,
@@ -413,7 +453,9 @@ export class HUD {
             const x = (p.x / config.TILE_SIZE) * config.MINIMAP_SCALE;
             const y = (p.y / config.TILE_SIZE) * config.MINIMAP_SCALE;
 
-            const currentMask = asset_deck.getSprite(p.mask_frames[p.mask][1]);
+            const currentMask = asset_deck.getSprite(
+                p.tinted_mask_frames[p.mask][1],
+            );
             canvas.ctx.drawImage(
                 currentMask,
                 canvas_x + x,
@@ -446,8 +488,8 @@ export class ViewPort {
         this.x = 0;
         this.y = 0;
 
-        this.height = 600;
-        this.width = 800;
+        this.height = config.CANVAS_HEIGHT;
+        this.width = config.CANVAS_WIDTH;
         this.speed_multiplier = 1;
 
         // How large zone should be where the camera starts to

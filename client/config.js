@@ -2,6 +2,9 @@ const SLOW = 0.1;
 const MEDIUM = 0.36;
 const FAST = 0.24;
 
+const CANVAS_HEIGHT = 672;
+const CANVAS_WIDTH = 864;
+
 // Make this bigger to make everything bigger
 // make it smaller to make everything smaller
 const SCALE = 48;
@@ -16,6 +19,11 @@ const VIEWPORT_BUFFER = 3 * SCALE;
 const TILE_SIZE = 96;
 
 const DRAW_COLLISION = false;
+
+const SHOW_MESSAGE_TIMER = 3000;
+
+// How fast an individual enemy ticks down the health bar.
+const DAMAGE_RATE = 0.05;
 
 // Use the current hostname instead of hardcoded localhost
 // This allows mobile devices to connect to the server
@@ -34,6 +42,9 @@ const MASK_CONFIG = [
 
 const MASK_COUNT = MASK_CONFIG.length - 1;
 
+const SPAWN_FREQUENCY = 10;
+const SPAWN_INCREMENT = 50;
+
 export {
     SLOW,
     MEDIUM,
@@ -47,4 +58,10 @@ export {
     MASK_COUNT,
     MINIMAP_SCALE,
     MINIMAPE_INDICATOR_SCALE,
+    SPAWN_FREQUENCY,
+    SPAWN_INCREMENT,
+    DAMAGE_RATE,
+    CANVAS_WIDTH,
+    CANVAS_HEIGHT,
+    SHOW_MESSAGE_TIMER,
 };
