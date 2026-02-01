@@ -7,5 +7,12 @@ export function textToMatrix(text) {
 }
 
 export function randomSelect(array) {
-     return array[Math.floor(Math.random() * array.length)];
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+export function gaussianRandom(mu, sigma) {
+    const u = 1 - Math.random();
+    const v = Math.random();
+    const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    return z * sigma + mu;
 }
