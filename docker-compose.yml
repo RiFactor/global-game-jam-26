@@ -1,9 +1,6 @@
 services:
   mask-one-standing:
     container_name: mask-one-standing
-    build:
-      context: .
-    volumes:
-      - ./:/home/node/app
+    image: shellywell123/mask-one-standing:latest
     ports:
       - 8000:8000

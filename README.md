@@ -60,7 +60,10 @@ then navigate to [localhost:8000](https://localhost:8000) in your browser.
 ```bash
 make
 ```
-
+or
+```bash
+make docker
+```
 then navigate to [localhost:8000](https://localhost:8000) in your browser.
 
 
