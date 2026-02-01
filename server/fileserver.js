@@ -434,6 +434,12 @@ class ServerState {
         this.players.forEach((player) => {
             player.socket.send(message);
         });
+        // remove all inactive players
+        const num_players = this.players.length;
+        this.players = this.players.filter((player) => player.state.active);
+        console.log(
+            `Cleared ${num_players - this.players.length} inactive players`,
+        );
         // Clear the NPCs interval
         clearInterval(this.interval_npcs);
         // delete all npcs, initialse new fresh ones

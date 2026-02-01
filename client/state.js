@@ -252,6 +252,7 @@ class State {
     resetState() {
         console.log("Resetting state");
         this.characters.length = 0;
+        this.other_players.length = 0;
         this.game_state = GameState.LOBBY;
         this.player.health = 100;
         this.player.x = this.viewport.width / 2 - 50;
