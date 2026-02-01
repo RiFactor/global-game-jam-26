@@ -87,9 +87,12 @@ class State {
             this.characters.push(new Character(all_assets[3 + character.mask], enemy_masks));
         };
 
-        this.addPlayer = () => {
+        this.addPlayer = async (character) => {
+            let player_sprites = await loadPlayerSprites(this.assets, {
+		    tint_key: character.player_id
+	    });
             this.other_players.push(
-                new Character(character_sprites, character_masks),
+                new Character(player_sprites, character_masks),
             );
         };
 
@@ -144,13 +147,13 @@ class State {
             );
             var n_players = this.other_players.length;
             let new_players =
-                message.players.length - this.other_players.length;
+                message.players.length - n_players;
 
             if (new_players < 0) {
                 console.error("Missing players");
             } else if (new_players > 0) {
                 for (let i = 0; i < new_players; i++) {
-                    this.addPlayer();
+                    this.addPlayer(message.players[n_players + i]);
                 }
             }
 
