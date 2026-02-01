@@ -2,7 +2,7 @@
 <html lang="en-US">
     <head>
         <meta charset="utf-8" />
-        <title>Our Game</title>
+        <title>Mask One Standing</title>
         <script type="module" src="./main.js"></script>
         <link
             rel="icon"
@@ -22,17 +22,21 @@
             html {
                 display: table;
                 margin: auto;
+                overflow-x: hidden;
+                touch-action: pan-y;
             }
             body {
                 background-color: #c2c0bc; /* gameboy light grey */
+                overflow-x: hidden;
+                touch-action: pan-y;
             }
             canvas {
                 padding: 16px;
                 box-sizing: border-box;
                 image-rendering: pixelated;
                 display: block;
-                width: 800px;
-                height: 600px;
+                width: 864px;
+                height: 672px;
             }
         </style>
     </head>

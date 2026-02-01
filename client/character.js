@@ -1,5 +1,6 @@
 import * as config from "./config.js";
 import * as utils from "./utils.js";
+import * as collision from "./collision.js";
 
 // An immutable enumeration representing the directions that a character can be
 // facing / moving.
@@ -49,63 +50,85 @@ async function loadPlayerSprites(
 //      ret[i][j]
 //
 // is the jth orientation of the ith mask.
+
 async function loadAllMaskSprites(
     asset_deck,
-    { character = "player", mask_name = "il-dottore" } = {},
+    { character = "player", tint_key = null } = {},
 ) {
     const orientations = ["front", "left", "right"];
     const fetchMask = (name) => {
         return orientations.map(async (i) => {
             return asset_deck.fetchImage(
                 `assets/${character}/masks/${name}/${i}.png`,
-                mask_name,
+                tint_key ? tint_key : name,
             );
         });
     };
 
     var all_promises = new Array();
-    all_promises = all_promises.concat(fetchMask(mask_name));
+    config.MASK_CONFIG.forEach((conf) => {
+        all_promises = all_promises.concat(fetchMask(conf[0]));
+    });
 
     // await all of them together
     const all_masks = await Promise.all(all_promises);
     const back = await asset_deck.fetchImage(
         `assets/${character}/masks/back.png`,
-        mask_name,
     );
 
     // split back up into their characters
     var masks = new Array();
-    for (let i = 0; i < 1; i += 3) {
+    for (let i = 0; i <= config.MASK_COUNT; i += 1) {
         // get the masks and add in the back index in the right location
-        let m = all_masks.slice(i * 3, i + 3);
+        let m = all_masks.slice(i * 3, i * 3 + 3);
         m.splice(0, 0, back);
         masks.push(m);
     }
-
     return masks;
 }
 
 class Character {
     // Accepts an array of sprite frames, which it uses to draw itself. These
     // should be `Facing` order (see above).
-    constructor(sprite_frames, mask_frames) {
+    constructor(
+        sprite_frames,
+        mask_frames,
+        tinted_mask_frames,
+        apply_mask_offset,
+    ) {
         this.x = 0;
         this.y = 0;
         this.vx = 0;
         this.vy = 0;
         this.speed = config.MEDIUM;
-        this.width = 96;
-        this.height = 96;
+        this.width = config.SCALE;
+        this.height = config.SCALE;
         this.sprite_frames = sprite_frames;
+        this.mask = 0;
         this.mask_frames = mask_frames;
+        this.tinted_mask_frames = tinted_mask_frames
+            ? tinted_mask_frames
+            : mask_frames;
+        this.apply_mask_offset = apply_mask_offset ? true : false;
         // Orientation is the same as Facing
         this.orientation = Facing.DOWN;
         this.active = true;
+        // Indicates whether they have been got
+        this.alive = true;
+        this.health = 100;
 
         this.timer = 0;
         this.draw_state = DrawSate.STATIONARY;
+        this.has_mask = true;
         this.anim_frame = 0;
         this.frame_delay = 100;
+        this.player_id = null;
+
+        this.collision_box = new collision.CollisionBox(
+            this.width - 20,
+            this.height,
+            10,
+        );
     }
 
     // Draw the sprite.
@@ -130,22 +153,63 @@ class Character {
         const frame = asset_deck.getSprite(frame_index);
 
         const mask_frame = asset_deck.getSprite(
-            this.mask_frames[0][this.orientation],
+            this.mask_frames[this.mask][this.orientation],
         );
+        const mask_offset_x =
+            this.apply_mask_offset && this.orientation >= 2
+                ? config.MASK_CONFIG[this.mask][1][this.orientation]
+                : 0;
+        const mask_offset_y =
+            this.apply_mask_offset && this.orientation < 2
+                ? config.MASK_CONFIG[this.mask][1][this.orientation]
+                : 0;
 
         viewport.draw(
             (canvas, x, y) => {
                 canvas.ctx.drawImage(frame, x, y, this.width, this.height);
-                canvas.ctx.drawImage(mask_frame, x, y, this.width, this.height);
+                if (this.has_mask) {
+                    canvas.ctx.drawImage(
+                        mask_frame,
+                        x + mask_offset_x,
+                        y + mask_offset_y,
+                        this.width,
+                        this.height,
+                    );
+                }
+                if (config.DRAW_COLLISION) {
+                    this.collision_box.draw(canvas, x, y);
+                }
             },
             this.x,
             this.y,
         );
     }
 
+    prevMask() {
+        console.log("prev mask");
+        this.mask == 0 ? (this.mask = config.MASK_COUNT) : (this.mask -= 1);
+        console.log(
+            "next mask",
+            "count:",
+            config.MASK_COUNT,
+            "mask:",
+            this.mask,
+        );
+    }
+
+    nextMask() {
+        this.mask == config.MASK_COUNT ? (this.mask = 0) : (this.mask += 1);
+    }
+
+    update(dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+    }
+
     // Called once per loop. Updates all logic and position of the Character.
-    update(dt, up, down, left, right) {
+    updateKeys(up, down, left, right) {
         // work out which direction the player is moving
+        // console.log(this.mask);
         var vx = 0;
         var vy = 0;
         if (right) {
@@ -162,8 +226,6 @@ class Character {
         }
 
         this.setMovement(vx, vy);
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
     }
 
     // Given a `facing` direction, move the character that way.
@@ -205,7 +267,10 @@ class Character {
         this.orientation = new_state.orientation;
         this.draw_state = new_state.draw_state;
         this.mask = new_state.mask;
+        this.has_mask = new_state.has_mask;
         this.active = new_state.active;
+        this.player_id = new_state.player_id;
+        this.health = new_state.health;
     }
 }
 

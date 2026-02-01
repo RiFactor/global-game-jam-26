@@ -1,18 +1,15 @@
 import * as config from "./config.js";
 import * as utils from "./utils.js";
+import { CollisionBox } from "./collision.js";
 
 // Used for storing all the assets that we need to include (sprites and audio).
 export class AssetDeck {
     constructor() {
         this.sprite_buffer = new Array();
         this.audio_buffer = new Array();
+        this.file_buffer = new Array();
         this.tint_buffer = new Map();
-    }
-
-    gaussianRandom() {
-        const u = 1 - Math.random();
-        const v = Math.random();
-        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        this.tint_distance = 130;
     }
 
     toDoubleHex(number) {
@@ -25,27 +22,59 @@ export class AssetDeck {
     }
 
     randomTint() {
-        var r = Math.abs(this.gaussianRandom());
-        var g = Math.abs(this.gaussianRandom());
-        var b = Math.abs(this.gaussianRandom());
+        var r = Math.abs(utils.gaussianRandom());
+        var g = Math.abs(utils.gaussianRandom());
+        var b = Math.abs(utils.gaussianRandom());
         var normalisation = 255.0 / Math.sqrt(r * r + g * g + b * b);
         var normalised_r = Math.round(r * normalisation);
         var normalised_g = Math.round(g * normalisation);
         var normalised_b = Math.round(b * normalisation);
-        return (
+        return [
             "#" +
-            this.toDoubleHex(normalised_r) +
-            this.toDoubleHex(normalised_g) +
-            this.toDoubleHex(normalised_b)
-        );
+                this.toDoubleHex(normalised_r) +
+                this.toDoubleHex(normalised_g) +
+                this.toDoubleHex(normalised_b),
+            [normalised_r, normalised_g, normalised_b],
+        ];
+    }
+
+    // Try to keep the tints quite different
+    randomDistantTint() {
+        if (this.tint_buffer.size == 0) {
+            return this.randomTint();
+        } else {
+            var max_dist = -1;
+            var max_candidate = null;
+            for (let i = 1; i <= 3; i++) {
+                let candidate = this.randomTint();
+                let min_dist = Math.min(
+                    ...this.tint_buffer.values().map((value) => {
+                        return Math.sqrt(
+                            Math.pow(candidate[1][0] - value[1][0], 2) +
+                                Math.pow(candidate[1][1] - value[1][1], 2) +
+                                Math.pow(candidate[1][2] - value[1][2], 2),
+                        );
+                    }),
+                );
+                if (min_dist > this.tint_distance) {
+                    return candidate;
+                }
+                if (min_dist > max_dist) {
+                    max_dist = min_dist;
+                    max_candidate = candidate;
+                }
+            }
+            this.tint_distance = max_dist;
+            return max_candidate;
+        }
     }
 
     // Gets or generates the fill tint for a given key.
     getOrCreateTint(tint_key) {
         if (!this.tint_buffer.has(tint_key)) {
-            this.tint_buffer.set(tint_key, this.randomTint());
+            this.tint_buffer.set(tint_key, this.randomDistantTint());
         }
-        return this.tint_buffer.get(tint_key);
+        return this.tint_buffer.get(tint_key)[0];
     }
 
     // Preload an image. Example usage is
@@ -86,13 +115,28 @@ export class AssetDeck {
             var audio = new Audio();
             audio.src = uri;
             // Setup a hook to store the audio in the buffer
-            audio.onload = () => {
+            audio.oncanplaythrough = () => {
                 console.log(`Asset fetched: ${uri}`);
                 this.audio_buffer.push(audio);
-                const index = this.audio_buffer.length;
+                const index = this.audio_buffer.length - 1;
                 resolve(index);
             };
             audio.onerror = err;
+        });
+    }
+
+    // Fetch a file as text.
+    fetchFile(uri) {
+        return new Promise((resolve, err) => {
+            fetch(uri)
+                .then((response) => {
+                    return response.text();
+                })
+                .then((text) => {
+                    this.file_buffer.push(text);
+                    const index = this.file_buffer.length - 1;
+                    resolve(index);
+                });
         });
     }
 
@@ -107,10 +151,8 @@ export class AssetDeck {
     }
 }
 
-function ChessboardPattern(ctx, canvas, asset_bank, x, y) {
-    const squareSize = 48;
-    const rows = 100;
-    const cols = 100;
+function ChessboardPattern(ctx, canvas, asset_bank, rows, cols, x, y) {
+    const squareSize = config.TILE_SIZE;
 
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
@@ -129,40 +171,390 @@ function ChessboardPattern(ctx, canvas, asset_bank, x, y) {
     }
 }
 
-function renderText(ctx, color, font = "30px Arial", text, x, y) {
+function renderTimer(
+    ctx,
+    timeLeft,
+    x,
+    y,
+    bold,
+    gameStartTime,
+    survivalTime,
+    isDead,
+) {
+    // Show survival time when dead, otherwise show current elapsed time
+    const displayTime = isDead
+        ? survivalTime
+        : gameStartTime
+          ? (Date.now() - gameStartTime) / 1000
+          : 0;
+
+    renderText(
+        canvas.ctx,
+        "black",
+        "20px Consolas",
+        `${displayTime.toFixed(2)}s`,
+        x + 2,
+        y + 2,
+        bold,
+    );
+    renderText(
+        canvas.ctx,
+        "white",
+        "20px Consolas",
+        `${displayTime.toFixed(2)}s`,
+        x,
+        y,
+        bold,
+    );
+}
+
+function renderPlayerStatsMask(ctx, player, asset_bank, x, y) {
+    const maskImage = asset_bank.getSprite(
+        player.tinted_mask_frames[player.mask][1],
+    );
+    var size = 30;
+    ctx.drawImage(maskImage, x, y - 5 - size / 2, size, size);
+}
+
+function renderPlayerStatsHealthBar(ctx, x, y, health) {
+    // health bar
+    ctx.fillStyle = "red";
+    ctx.fillRect(x + 30, y - 20, 100, 20);
+    ctx.fillStyle = "green";
+    ctx.fillRect(x + 30, y - 20, health, 20);
+}
+
+function renderPlayerStats(ctx, player, x, y, bold, asset_bank) {
+    renderPlayerStatsMask(ctx, player, asset_bank, x, y);
+
+    var playerName = "";
+    if (player.player_id && typeof player.player_id === "string") {
+        // Handle IPv6-mapped IPv4 addresses (e.g., "::ffff:192.168.1.1:12345")
+        if (player.player_id.includes("f:")) {
+            playerName = String(player.player_id.split("f:")[1]);
+        } else {
+            // Handle regular IPv4 addresses (e.g., "127.0.0.1:12345")
+            playerName = player.player_id;
+        }
+    }
+
+    renderPlayerStatsHealthBar(ctx, x, y, player.health);
+
+    renderText(
+        canvas.ctx,
+        "black",
+        "20px Consolas",
+        playerName || "Offline",
+        x + 134,
+        y,
+        bold,
+    );
+    renderText(
+        canvas.ctx,
+        "white",
+        "20px Consolas",
+        playerName || "Offline",
+        x + 132,
+        y - 2,
+        bold,
+    );
+}
+
+function renderStatusBar(ctx, player, x, y, bold, asset_bank) {
+    const maskCount = player.mask_frames.length;
+    const prevMaskIndex = (player.mask - 1 + maskCount) % maskCount;
+    const nextMaskIndex = (player.mask + 1) % maskCount;
+
+    const leftMask = asset_bank.getSprite(player.mask_frames[prevMaskIndex][1]);
+    var size = 50;
+    ctx.drawImage(leftMask, x - size, y + 10, size, size);
+
+    const currentMask = asset_bank.getSprite(
+        player.mask_frames[player.mask][1],
+    );
+    ctx.drawImage(currentMask, x, y, size, size);
+
+    const rightMask = asset_bank.getSprite(
+        player.mask_frames[nextMaskIndex][1],
+    );
+    ctx.drawImage(rightMask, x + size, y + 10, size, size);
+}
+
+function renderText(ctx, color, font = "30px Arial", text, x, y, bold) {
     ctx.font = font;
     ctx.fillStyle = color;
+    if (bold) {
+        ctx.font = "bold " + font;
+    }
     ctx.fillText(text, x, y);
 }
 
 export function onResize(canvas) {
-    canvas.width = 800;
-    canvas.height = 600;
+    canvas.width = config.CANVAS_WIDTH;
+    canvas.height = config.CANVAS_HEIGHT;
 }
 
-function drawBackground(viewport, asset_bank) {
+function drawBackground(viewport, asset_bank, rows, cols) {
     viewport.draw(
         (canvas, x, y) => {
-            ChessboardPattern(canvas.ctx, canvas, asset_bank, x, y);
-            renderText(
-                canvas.ctx,
-                "red",
-                "50px Arial",
-                "Welcome to our lil game, you can control the lil guy with lil WASD keys!",
-                x + 96,
-                y + 96,
-            );
+            ChessboardPattern(canvas.ctx, canvas, asset_bank, rows, cols, x, y);
+            addGithubLink(canvas);
         },
         0,
         0,
     );
 }
 
-export class GameMap {
-    constructor() {}
+// HUD
+function drawForeground(
+    canvas,
+    asset_bank,
+    player,
+    other_players,
+    gameStartTime,
+    survivalTime,
+    isDead,
+) {
+    var leftPadding = 5;
+    var topPadding = 25;
 
-    draw(dt, canvas, asset_deck) {
-        drawBackground(canvas, asset_deck);
+    renderPlayerStats(
+        canvas.ctx,
+        player,
+        leftPadding,
+        topPadding,
+        true,
+        asset_bank,
+    );
+
+    for (let i = 0; i < other_players.length; i++) {
+        renderPlayerStats(
+            canvas.ctx,
+            other_players[i],
+            leftPadding,
+            topPadding + (i + 1) * topPadding,
+            false,
+            asset_bank,
+        );
+    }
+
+    renderStatusBar(
+        canvas.ctx,
+        player,
+        canvas.width / 2,
+        canvas.height - 50,
+        true,
+        asset_bank,
+    );
+
+    renderTimer(
+        canvas.ctx,
+        player.game_timer,
+        canvas.width * 0.9,
+        topPadding,
+        true,
+        gameStartTime,
+        survivalTime,
+        isDead,
+    );
+}
+
+class Structure {
+    constructor(x, y, width, height) {
+        this.x = x;
+        this.y = y;
+        this.collision_box = new CollisionBox(width, height);
+    }
+
+    draw(canvas, x, y) {
+        canvas.ctx.fillStyle = "black";
+        canvas.ctx.fillRect(
+            x,
+            y,
+            this.collision_box.width,
+            this.collision_box.height,
+        );
+    }
+}
+
+export class GameMap {
+    constructor() {
+        this.x_size = 0;
+        this.y_size = 0;
+        // TODO: make this a constant in the config
+        this.tile_size = config.TILE_SIZE;
+        this.structures = new Array();
+    }
+
+    draw(dt, viewport, asset_deck) {
+        drawBackground(viewport, asset_deck, this.y_size, this.x_size);
+        this.structures.forEach((s) => {
+            viewport.draw(
+                (canvas, x, y) => {
+                    s.draw(canvas, x, y);
+                    if (config.DRAW_COLLISION) {
+                        s.collision_box.draw(canvas, x, y);
+                    }
+                },
+                s.x,
+                s.y,
+            );
+        });
+    }
+
+    _setBoundaries() {
+        // left bar
+        this.structures.push(
+            new Structure(0, 0, this.tile_size, this.y_size * this.tile_size),
+        );
+        // top bar
+        this.structures.push(
+            new Structure(0, 0, this.x_size * this.tile_size, this.tile_size),
+        );
+        // right bar
+        this.structures.push(
+            new Structure(
+                this.x_size * this.tile_size,
+                0,
+                this.tile_size,
+                this.y_size * this.tile_size,
+            ),
+        );
+        // bottom bar
+        this.structures.push(
+            new Structure(
+                0,
+                this.y_size * this.tile_size,
+                this.x_size * this.tile_size,
+                this.tile_size,
+            ),
+        );
+    }
+
+    setMap(ascii_map) {
+        const matrix = utils.textToMatrix(ascii_map);
+        this.y_size = matrix.length;
+        if (this.y_size > 0) {
+            this.x_size = matrix[0].length;
+        }
+
+        console.log(`World map set: ${this.x_size}x${this.y_size}`);
+
+        // for each row
+        matrix.forEach((row, j) => {
+            const y_offset = j * this.tile_size;
+            row.forEach((cell, i) => {
+                const x_offset = i * this.tile_size;
+
+                if (cell == "1") {
+                    this.structures.push(
+                        new Structure(
+                            x_offset,
+                            y_offset,
+                            this.tile_size,
+                            this.tile_size,
+                        ),
+                    );
+                }
+            });
+        });
+
+        this._setBoundaries();
+    }
+
+    // Check for collisions with a character
+    collide(character) {
+        this.structures.forEach((s) => {
+            const collision = s.collision_box.collide(
+                s.x,
+                s.y,
+                character.collision_box,
+                character.x,
+                character.y,
+            );
+
+            if (collision !== null) {
+                const update = s.collision_box.determineUpdate(
+                    collision,
+                    character.collision_box,
+                    character.vx,
+                    character.vy,
+                );
+                character.vx *= update.vx;
+                character.vy *= update.vy;
+                character.x += update.dx;
+                character.y += update.dy;
+            }
+        });
+    }
+}
+
+export class HUD {
+    constructor() {
+        this.minimap_margin = 20;
+    }
+
+    drawMinimap(canvas, game_map, asset_deck, player, other_players) {
+        const height = game_map.y_size * config.MINIMAP_SCALE;
+        const width = game_map.x_size * config.MINIMAP_SCALE;
+        const canvas_x = canvas.width - width - this.minimap_margin;
+        const canvas_y = canvas.height - height - this.minimap_margin;
+
+        canvas.ctx.fillStyle = "green";
+        canvas.ctx.strokeStyle = "black";
+        canvas.ctx.strokeRect(canvas_x, canvas_y, width, height);
+        canvas.ctx.fillRect(canvas_x, canvas_y, width, height);
+
+        const drawPlayerIndicator = (p) => {
+            canvas.ctx.fillStyle = "red";
+            const x = (p.x / config.TILE_SIZE) * config.MINIMAP_SCALE;
+            const y = (p.y / config.TILE_SIZE) * config.MINIMAP_SCALE;
+
+            const currentMask = asset_deck.getSprite(
+                p.tinted_mask_frames[p.mask][1],
+            );
+            canvas.ctx.drawImage(
+                currentMask,
+                canvas_x + x,
+                canvas_y + y,
+                config.MINIMAPE_INDICATOR_SCALE,
+                config.MINIMAPE_INDICATOR_SCALE,
+            );
+        };
+
+        drawPlayerIndicator(player);
+        other_players.forEach(drawPlayerIndicator);
+    }
+
+    draw(
+        dt,
+        viewport,
+        asset_deck,
+        player,
+        other_players,
+        game_map,
+        gameStartTime,
+        survivalTime,
+        isDead,
+    ) {
+        // important info
+        // players are never deleted so the length of other_players will never decrease
+        // when a player leaves/ disconnects, they re enter a new player
+        // to tell is a player is active, they have a draw state of 1, deactive is 0
+
+        const active_others = other_players.filter((p) => p.active == true);
+
+        drawForeground(
+            viewport.canvas,
+            asset_deck,
+            player,
+            active_others,
+            gameStartTime,
+            survivalTime,
+            isDead,
+        );
+        // draw the map in the bottom right corner of the canvas
+        this.drawMinimap(canvas, game_map, asset_deck, player, active_others);
     }
 }
 
@@ -171,13 +563,13 @@ export class ViewPort {
         this.x = 0;
         this.y = 0;
 
-        this.height = 600;
-        this.width = 800;
-        this.speed_multiplier = 2;
+        this.height = config.CANVAS_HEIGHT;
+        this.width = config.CANVAS_WIDTH;
+        this.speed_multiplier = 1;
 
         // How large zone should be where the camera starts to
         // follow the player.
-        this.move_zone = 20;
+        this.move_zone = config.VIEWPORT_BUFFER;
         this.canvas = canvas;
     }
 
@@ -198,7 +590,7 @@ export class ViewPort {
     }
 
     // Center the viewport on a given point moving with a given speed.
-    follow(dt, x, y, vx, vy) {
+    follow(dt, game_map, x, y, vx, vy) {
         let move_x = 0;
         let move_y = 0;
 
@@ -206,15 +598,53 @@ export class ViewPort {
         const X = x - this.x;
         const Y = y - this.y;
 
-        if (X < this.move_zone || X > this.width - this.move_zone - 96) {
+        if (X < this.move_zone) {
+            move_x -= 1;
+        } else if (X > this.width - this.move_zone - config.SCALE) {
             move_x += 1;
         }
 
-        if (Y < this.move_zone || Y > this.height - this.move_zone - 96) {
+        if (Y < this.move_zone) {
+            move_y -= 1;
+        } else if (Y > this.height - this.move_zone - config.SCALE) {
             move_y += 1;
         }
 
-        this.x += this.speed_multiplier * move_x * dt * vx;
-        this.y += this.speed_multiplier * move_y * dt * vy;
+        this.x += this.speed_multiplier * move_x * dt * Math.abs(vx);
+        this.y += this.speed_multiplier * move_y * dt * Math.abs(vy);
+
+        // Clip to the size of the world
+        this.x = Math.max(0, this.x);
+        this.y = Math.max(0, this.y);
+        const map_height_pixels = (game_map.y_size + 1) * game_map.tile_size;
+        const map_width_pixels = (game_map.x_size + 1) * game_map.tile_size;
+        this.x = Math.min(map_width_pixels - this.width, this.x);
+        this.y = Math.min(map_height_pixels - this.height, this.y);
+    }
+}
+
+function addGithubLink(canvas) {
+    if (!document.getElementById("github-logo-link")) {
+        const link = document.createElement("a");
+        link.id = "github-logo-link";
+        link.href = "https://github.com/RiFactor/global-game-jam-26";
+        link.textContent = "View on GITHUB";
+        link.target = "_blank";
+        link.style.margin = "10px 10px 10px 10px";
+        link.style.background = "#c2c0bc";
+        link.style.borderRadius = "999px/48px";
+        link.style.border = "4px solid #333";
+        link.style.boxShadow = "0 4px 16px rgba(0,0,0,0.18)";
+        link.style.textDecoration = "none";
+        link.style.color = "#333";
+        link.style.fontWeight = "bold";
+        link.style.fontSize = "1.2em";
+        link.style.letterSpacing = "0.1em";
+        link.style.fontFamily = "'Consolas'";
+        link.style.textAlign = "center";
+        link.style.fontStyle = "italic";
+        link.style.userSelect = "none";
+        // Insert after canvas
+        canvas.parentNode.insertBefore(link, canvas.nextSibling);
     }
 }
