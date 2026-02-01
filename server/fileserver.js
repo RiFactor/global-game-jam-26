@@ -24,14 +24,7 @@ const MIME_TYPES = {
 const STATIC_PATH = path.join(process.cwd(), "client");
 const toBool = [() => true, () => false];
 
-// An immutable enumeration representing the directions that a character can be
-// facing / moving.
-const Facing = Object.freeze({
-    UP: 0,
-    DOWN: 1,
-    LEFT: 2,
-    RIGHT: 3,
-});
+const Facing = require("../client/character.js");
 
 // Translates a url path to a file name.
 function lookupPath(url_path) {
