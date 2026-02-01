@@ -483,49 +483,7 @@ class State {
         drawTime("black", 15);
         drawTime("white", 10);
 
-        // Display spectator message if spectating
-        if (this.isSpectating) {
-            this.canvas.ctx.fillStyle = "black";
-            this.canvas.ctx.font = "bold 30px Consolas";
-            this.canvas.ctx.fillText(
-                "Spectating this session",
-                102,
-                352,
-            );
-            this.canvas.ctx.fillStyle = "yellow";
-            this.canvas.ctx.fillText(
-                "Spectating this session",
-                100,
-                350,
-            );
-            
-            this.canvas.ctx.fillStyle = "black";
-            this.canvas.ctx.font = "20px Consolas";
-            this.canvas.ctx.fillText(
-                "You will join the next session",
-                102,
-                382,
-            );
-            this.canvas.ctx.fillStyle = "white";
-            this.canvas.ctx.fillText(
-                "You will join the next session",
-                100,
-                380,
-            );
-            
-            this.canvas.ctx.fillStyle = "black";
-            this.canvas.ctx.fillText(
-                "once all current players die",
-                102,
-                412,
-            );
-            this.canvas.ctx.fillStyle = "white";
-            this.canvas.ctx.fillText(
-                "once all current players die",
-                100,
-                410,
-            );
-        }
+        
 
         // Display player's rank underneath the time
         if (this.playerRank) {
@@ -571,6 +529,50 @@ class State {
                 this.canvas.ctx.strokeStyle = "black";
                 this.canvas.ctx.strokeText(text, 120, 380 + index * 30);
             });
+        }
+
+        // Display spectator message if spectating
+        if (this.isSpectating) {
+            this.canvas.ctx.fillStyle = "black";
+            this.canvas.ctx.font = "bold 30px Consolas";
+            this.canvas.ctx.fillText(
+                "tecapating this session",
+                102,
+                352,
+            );
+            this.canvas.ctx.fillStyle = "yellow";
+            this.canvas.ctx.fillText(
+                "tecapating this session",
+                100,
+                350,
+            );
+            
+            this.canvas.ctx.fillStyle = "black";
+            this.canvas.ctx.font = "30px Consolas";
+            this.canvas.ctx.fillText(
+                "You jill woin the netx sessin",
+                102,
+                382,
+            );
+            this.canvas.ctx.fillStyle = "yellow";
+            this.canvas.ctx.fillText(
+                "You jill woin the netx sessin",
+                100,
+                380,
+            );
+            
+            this.canvas.ctx.fillStyle = "black";
+            this.canvas.ctx.fillText(
+                "once all purrent clayers die",
+                102,
+                412,
+            );
+            this.canvas.ctx.fillStyle = "yellow";
+            this.canvas.ctx.fillText(
+                "once all purrent clayers die",
+                100,
+                410,
+            );
         }
     }
 
