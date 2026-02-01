@@ -18,7 +18,7 @@ const VIEWPORT_BUFFER = 3 * SCALE;
 
 const TILE_SIZE = 96;
 
-const DRAW_COLLISION = true;
+const DRAW_COLLISION = false;
 
 const SHOW_MESSAGE_TIMER = 3000;
 
@@ -43,7 +43,7 @@ const MASK_CONFIG = [
 const MASK_COUNT = MASK_CONFIG.length - 1;
 
 const SPAWN_FREQUENCY = 10;
-const SPAWN_INCREMENT = 10;
+const SPAWN_INCREMENT = 50;
 
 export {
     SLOW,
