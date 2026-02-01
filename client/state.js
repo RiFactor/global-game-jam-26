@@ -71,6 +71,10 @@ class State {
         this.gameStartTime = null;
         this.survivalTime = 0;
 
+        // Leaderboard data from server
+        this.leaderboard = [];
+        this.playerRank = null;
+
         // Functions for creating a new character and new player
         this.addPlayer = undefined;
         this.addCharacter = undefined;
@@ -146,6 +150,15 @@ class State {
 
     // Called when a websocket message comes back from the server
     onServerMessage(message) {
+        // Leaderboard update
+        if (message.leaderboard !== undefined) {
+            this.leaderboard = message.leaderboard;
+            if (message.player_rank && message.player_rank.player_id === this.player_id) {
+                this.playerRank = message.player_rank.rank;
+            }
+            return;
+        }
+
         // Game started?
         if (message.start_game !== undefined) {
             this.show_message = config.SHOW_MESSAGE_TIMER;
@@ -404,25 +417,39 @@ class State {
                 200 + offset,
             );
         };
+
+        const drawTime = (color, offset) => {
+            this.canvas.ctx.fillStyle = color;
+            this.canvas.ctx.font = "bold 40px Consolas";
+            this.canvas.ctx.fillText(
+                `Yuo vursived fro ${this.survivalTime.toFixed(2)} seconds`,
+                90 + offset,
+                300 + offset,
+            );
+            this.canvas.ctx.strokeStyle = "black";
+            this.canvas.ctx.strokeText(
+                `Yuo vursived fro ${this.survivalTime.toFixed(2)} seconds`,
+                90 + offset,
+                300 + offset,
+            );
+        };
+
         drawText("black", 15);
         drawText("red", 10);
         drawText("black", 5);
         drawText("red", 0);
 
-        // Display survival time score
-        this.canvas.ctx.fillStyle = "white";
-        this.canvas.ctx.font = "bold 40px Consolas";
-        this.canvas.ctx.fillText(
-            `Survival Time: ${this.survivalTime.toFixed(2)}s`,
-            100,
-            300,
-        );
-        this.canvas.ctx.strokeStyle = "black";
-        this.canvas.ctx.strokeText(
-            `Survival Time: ${this.survivalTime.toFixed(2)}s`,
-            100,
-            300,
-        );
+        drawTime("black", 15);
+        drawTime("white", 10);
+
+        // Display player's rank underneath the time
+        if (this.playerRank) {
+            this.canvas.ctx.fillStyle = "black";
+            this.canvas.ctx.font = "bold 30px Consolas";
+            this.canvas.ctx.fillText(`Your rank: #${this.playerRank}`, 102, 352);
+            this.canvas.ctx.fillStyle = "yellow";
+            this.canvas.ctx.fillText(`Your rank: #${this.playerRank}`, 100, 350);
+        }
 
         const currentMask = this.assets.getSprite(
             this.player.mask_frames[this.mask][1],
@@ -434,6 +461,23 @@ class State {
             288,
             288,
         );
+
+        // Display leaderboard
+        if (this.leaderboard.length > 0) {
+
+            this.canvas.ctx.font = "20px Consolas";
+            this.leaderboard.forEach((entry, index) => {
+                const rank = index + 1;
+                const text = `${rank}. ${entry.player_id}: ${entry.time.toFixed(2)}s`;
+                
+                // Highlight if this is the current player
+                const isCurrentPlayer = entry.player_id === this.player_id;
+                this.canvas.ctx.fillStyle = isCurrentPlayer ? "yellow" : "white";
+                this.canvas.ctx.fillText(text, 120, 380 + index * 30);
+                this.canvas.ctx.strokeStyle = "black";
+                this.canvas.ctx.strokeText(text, 120, 380 + index * 30);
+            });
+        }
     }
 
     gameOver() {
@@ -442,8 +486,9 @@ class State {
         if (this.gameStartTime) {
             this.survivalTime = (Date.now() - this.gameStartTime) / 1000;
             console.log(`You survived for ${this.survivalTime.toFixed(2)} seconds`);
+            // Send survival time to server for leaderboard
+            this.conn.sendDeath(this.survivalTime);
         }
-        // notify the server
     }
 }
 

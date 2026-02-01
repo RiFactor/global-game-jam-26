@@ -7,6 +7,7 @@ const config = require("../client/config.js");
 const utils = require("../client/utils.js");
 
 const PORT = 8000;
+const LEADERBOARD_FILE = "leaderboard.txt";
 
 const MIME_TYPES = {
     default: "application/octet-stream",
@@ -66,6 +67,7 @@ class CharacterState {
     active = true;
     has_mask = false;
     health = 0;
+    survival_time = 0;
 }
 
 class NonPlayerCharacter {
@@ -220,6 +222,13 @@ class PlayerHandler {
                 this.ready = true;
             }
         }
+        if (msg.death !== undefined) {
+            if (msg.death == 1) {
+                this.state.survival_time = msg.survival_time;
+                console.log(`Player ${this.state.player_id} died with time ${msg.survival_time.toFixed(2)}s`);
+                return { type: 'death', player_id: this.state.player_id, time: msg.survival_time };
+            }
+        }
         if (msg.content !== undefined) {
             const content = msg.content;
             this.state.x = content.x;
@@ -243,6 +252,8 @@ class ServerState {
         this.websocket_server = websocket_server;
 
         this.game_running = false;
+        this.leaderboard = new Array();
+        this.loadLeaderboard();
 
         this.map_width_tiles = 0;
         this.map_height_tiles = 0;
@@ -289,7 +300,23 @@ class ServerState {
             console.log(`Websocket connected from ${ip}:${port}`);
         }
 
-        socket.on("message", (data) => player.handleMessage(data));
+        socket.on("message", async (data) => {
+            const result = await player.handleMessage(data);
+            if (result && result.type === 'death') {
+                // Add to leaderboard
+                this.leaderboard.push({ player_id: result.player_id, time: result.time });
+                // Sort by time descending (highest time first)
+                this.leaderboard.sort((a, b) => b.time - a.time);
+                // Save to file
+                this.saveLeaderboard();
+                // Find player rank
+                const playerRank = this.leaderboard.findIndex(entry => 
+                    entry.player_id === result.player_id && entry.time === result.time
+                ) + 1;
+                // Broadcast updated leaderboard to all players with the dead player's rank
+                this.broadcastLeaderboard(result.player_id, playerRank);
+            }
+        });
         socket.on("error", console.error);
         socket.on("close", () => {
             console.log(`Player ${player_id} disconnected.`);
@@ -306,6 +333,35 @@ class ServerState {
         this.map_height_tiles = this.map_matrix.length;
         if (this.map_height_tiles > 0) {
             this.map_width_tiles = this.map_matrix[0].length;
+        }
+    }
+
+    loadLeaderboard() {
+        try {
+            if (fs.existsSync(LEADERBOARD_FILE)) {
+                const data = fs.readFileSync(LEADERBOARD_FILE, "utf8");
+                const lines = data.split("\n").filter(line => line.trim());
+                this.leaderboard = lines.map(line => {
+                    const [player_id, time] = line.split(",");
+                    return { player_id, time: parseFloat(time) };
+                });
+                console.log(`Loaded ${this.leaderboard.length} entries from leaderboard`);
+            }
+        } catch (err) {
+            console.error("Error loading leaderboard:", err);
+            this.leaderboard = [];
+        }
+    }
+
+    saveLeaderboard() {
+        try {
+            const data = this.leaderboard.map(entry => 
+                `${entry.player_id},${entry.time}`
+            ).join("\n");
+            fs.writeFileSync(LEADERBOARD_FILE, data, "utf8");
+            console.log("Leaderboard saved to file");
+        } catch (err) {
+            console.error("Error saving leaderboard:", err);
         }
     }
 
@@ -381,6 +437,20 @@ class ServerState {
 
         return this.players.map(async (player) => {
             player.socket.send(message);
+        });
+    }
+
+    // Broadcast leaderboard to all players
+    async broadcastLeaderboard(deadPlayerId = null, playerRank = null) {
+        const message = JSON.stringify({
+            leaderboard: this.leaderboard.slice(0, 10), // Top 10
+            player_rank: deadPlayerId ? { player_id: deadPlayerId, rank: playerRank } : null,
+        });
+
+        this.players.forEach((player) => {
+            if (player.socket.readyState === 1) {
+                player.socket.send(message);
+            }
         });
     }
 
