@@ -9,6 +9,7 @@ export class AssetDeck {
         this.audio_buffer = new Array();
         this.file_buffer = new Array();
         this.tint_buffer = new Map();
+        this.tint_distance = 130;
     }
 
     toDoubleHex(number) {
@@ -28,20 +29,52 @@ export class AssetDeck {
         var normalised_r = Math.round(r * normalisation);
         var normalised_g = Math.round(g * normalisation);
         var normalised_b = Math.round(b * normalisation);
-        return (
+        return [
             "#" +
-            this.toDoubleHex(normalised_r) +
-            this.toDoubleHex(normalised_g) +
-            this.toDoubleHex(normalised_b)
-        );
+                this.toDoubleHex(normalised_r) +
+                this.toDoubleHex(normalised_g) +
+                this.toDoubleHex(normalised_b),
+            [normalised_r, normalised_g, normalised_b],
+        ];
+    }
+
+    // Try to keep the tints quite different
+    randomDistantTint() {
+        if (this.tint_buffer.size == 0) {
+            return this.randomTint();
+        } else {
+            var max_dist = -1;
+            var max_candidate = null;
+            for (let i = 1; i <= 3; i++) {
+                let candidate = this.randomTint();
+                let min_dist = Math.min(
+                    ...this.tint_buffer.values().map((value) => {
+                        return Math.sqrt(
+                            Math.pow(candidate[1][0] - value[1][0], 2) +
+                                Math.pow(candidate[1][1] - value[1][1], 2) +
+                                Math.pow(candidate[1][2] - value[1][2], 2),
+                        );
+                    }),
+                );
+                if (min_dist > this.tint_distance) {
+                    return candidate;
+                }
+                if (min_dist > max_dist) {
+                    max_dist = min_dist;
+                    max_candidate = candidate;
+                }
+            }
+            this.tint_distance = max_dist;
+            return max_candidate;
+        }
     }
 
     // Gets or generates the fill tint for a given key.
     getOrCreateTint(tint_key) {
         if (!this.tint_buffer.has(tint_key)) {
-            this.tint_buffer.set(tint_key, this.randomTint());
+            this.tint_buffer.set(tint_key, this.randomDistantTint());
         }
-        return this.tint_buffer.get(tint_key);
+        return this.tint_buffer.get(tint_key)[0];
     }
 
     // Preload an image. Example usage is
