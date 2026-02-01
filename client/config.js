@@ -16,7 +16,10 @@ const DRAW_COLLISION = true;
 // Use the current hostname instead of hardcoded localhost
 // This allows mobile devices to connect to the server
 // Fallback to 127.0.0.1 if hostname is empty or if running in Node.js
-const hostname = typeof window !== "undefined" ? (window.location.hostname || "127.0.0.1") : "127.0.0.1";
+const hostname =
+    typeof window !== "undefined"
+        ? window.location.hostname || "127.0.0.1"
+        : "127.0.0.1";
 const URI = `ws://${hostname}:8000/`;
 
 export {
