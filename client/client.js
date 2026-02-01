@@ -41,6 +41,15 @@ class Connection {
         }
     }
 
+    // Send death notification with survival time
+    sendDeath(survivalTime) {
+        if (this.ready) {
+            this.websocket.send(
+                JSON.stringify({ death: 1, survival_time: survivalTime }),
+            );
+        }
+    }
+
     // Send the player's position to the server
     send(player) {
         if (this.ready) {
