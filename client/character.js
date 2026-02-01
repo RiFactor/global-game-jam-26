@@ -16,6 +16,15 @@ const DrawSate = Object.freeze({
     MOVING: 1,
 });
 
+// Name to offsets
+const mask_config = [
+    ["arlecchino", [0, 0, 0, 0]],
+    ["il-dottore", [0, 0, 0, 0]],
+    ["scaramouche", [0, 0, -10, 10]],
+];
+
+const mask_count = mask_config.length - 1;
+
 // Returns an array of integer indexes for the `asset_deck`.
 // Call as
 //
@@ -51,9 +60,6 @@ async function loadPlayerSprites(
 //
 // is the jth orientation of the ith mask.
 
-const masks = ["arlecchino", "il-dottore", "scaramouche"]; // can remove??
-// TODO scaramouche offset
-
 async function loadAllMaskSprites(asset_deck, { character = "player" } = {}) {
     const orientations = ["front", "left", "right"];
     const fetchMask = (name) => {
@@ -66,11 +72,9 @@ async function loadAllMaskSprites(asset_deck, { character = "player" } = {}) {
     };
 
     var all_promises = new Array();
-    all_promises = all_promises.concat(
-        fetchMask("arlecchino"),
-        fetchMask("il-dottore"),
-        fetchMask("scaramouche"),
-    );
+    mask_config.forEach((conf) => {
+        all_promises = all_promises.concat(fetchMask(conf[0]));
+    }); 
 
     // await all of them together
     const all_masks = await Promise.all(all_promises);
@@ -80,13 +84,12 @@ async function loadAllMaskSprites(asset_deck, { character = "player" } = {}) {
 
     // split back up into their characters
     var masks = new Array();
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i <= mask_count; i += 1) {
         // get the masks and add in the back index in the right location
         let m = all_masks.slice(i * 3, i * 3 + 3);
         m.splice(0, 0, back);
         masks.push(m);
     }
-    console.log(masks);
     return masks;
 }
 
@@ -145,11 +148,13 @@ class Character {
         const mask_frame = asset_deck.getSprite(
             this.mask_frames[this.mask][this.orientation],
         );
+        const mask_offset_x = this.orientation >= 2 ? mask_config[this.mask][1][this.orientation] : 0;
+        const mask_offset_y = this.orientation < 2 ? mask_config[this.mask][1][this.orientation] : 0;
 
         viewport.draw(
             (canvas, x, y) => {
                 canvas.ctx.drawImage(frame, x, y, this.width, this.height);
-                canvas.ctx.drawImage(mask_frame, x, y, this.width, this.height);
+                canvas.ctx.drawImage(mask_frame, x + mask_offset_x, y + mask_offset_y, this.width, this.height);
                 if (config.DRAW_COLLISION) {
                     this.collision_box.draw(canvas, x, y);
                 }
@@ -159,16 +164,14 @@ class Character {
         );
     }
 
-    count = masks.length - 1;
-
     prevMask() {
         console.log("prev mask");
-        this.mask == 0 ? (this.mask = this.count) : (this.mask -= 1);
-        console.log("next mask", "count:", this.count, "mask:", this.mask);
+        this.mask == 0 ? (this.mask = mask_count) : (this.mask -= 1);
+        console.log("next mask", "count:", mask_count, "mask:", this.mask);
     }
 
     nextMask() {
-        this.mask == this.count ? (this.mask = 0) : (this.mask += 1);
+        this.mask == mask_count ? (this.mask = 0) : (this.mask += 1);
     }
 
     update(dt) {
