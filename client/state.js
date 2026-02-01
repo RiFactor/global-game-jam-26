@@ -177,6 +177,7 @@ class State {
             this.assets,
             this.player,
             this.other_players,
+            this.game_map,
         );
     }
 

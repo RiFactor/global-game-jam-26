@@ -6,6 +6,10 @@ const FAST = 0.24;
 // make it smaller to make everything smaller
 const SCALE = 48;
 
+// How many pixels per tile
+const MINIMAP_SCALE = 2;
+const MINIMAPE_INDICATOR_SCALE = 20;
+
 // How close the player can get to the edge before the viewport starts to move
 const VIEWPORT_BUFFER = 3 * SCALE;
 
@@ -40,5 +44,7 @@ export {
     SCALE,
     VIEWPORT_BUFFER,
     MASK_CONFIG,
-    MASK_COUNT
+    MASK_COUNT,
+    MINIMAP_SCALE,
+    MINIMAPE_INDICATOR_SCALE,
 };
