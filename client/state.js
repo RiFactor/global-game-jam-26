@@ -219,7 +219,7 @@ class State {
             console.log(`Player ID set to ${message.player_id}`);
             this.player_id = message.player_id;
             this.player.player_id = message.player_id;
-            
+
             // Check if game is already running (spectator mode)
             if (message.game_running) {
                 this.isSpectating = true;
@@ -511,8 +511,6 @@ class State {
         drawTime("black", 15);
         drawTime("white", 10);
 
-        
-
         // Display player's rank underneath the time
         if (this.playerRank) {
             this.canvas.ctx.fillStyle = "black";
@@ -563,44 +561,20 @@ class State {
         if (this.isSpectating) {
             this.canvas.ctx.fillStyle = "black";
             this.canvas.ctx.font = "bold 30px Consolas";
-            this.canvas.ctx.fillText(
-                "tecapating this session",
-                102,
-                352,
-            );
+            this.canvas.ctx.fillText("tecapating this session", 102, 352);
             this.canvas.ctx.fillStyle = "yellow";
-            this.canvas.ctx.fillText(
-                "tecapating this session",
-                100,
-                350,
-            );
-            
+            this.canvas.ctx.fillText("tecapating this session", 100, 350);
+
             this.canvas.ctx.fillStyle = "black";
             this.canvas.ctx.font = "30px Consolas";
-            this.canvas.ctx.fillText(
-                "You jill woin the netx sessin",
-                102,
-                382,
-            );
+            this.canvas.ctx.fillText("You jill woin the netx sessin", 102, 382);
             this.canvas.ctx.fillStyle = "yellow";
-            this.canvas.ctx.fillText(
-                "You jill woin the netx sessin",
-                100,
-                380,
-            );
-            
+            this.canvas.ctx.fillText("You jill woin the netx sessin", 100, 380);
+
             this.canvas.ctx.fillStyle = "black";
-            this.canvas.ctx.fillText(
-                "once all purrent clayers die",
-                102,
-                412,
-            );
+            this.canvas.ctx.fillText("once all purrent clayers die", 102, 412);
             this.canvas.ctx.fillStyle = "yellow";
-            this.canvas.ctx.fillText(
-                "once all purrent clayers die",
-                100,
-                410,
-            );
+            this.canvas.ctx.fillText("once all purrent clayers die", 100, 410);
         }
     }
 

@@ -357,10 +357,12 @@ class ServerState {
         });
 
         // Need to let the player known that their ID is
-        socket.send(JSON.stringify({ 
-            player_id: player_id,
-            game_running: this.game_running 
-        }));
+        socket.send(
+            JSON.stringify({
+                player_id: player_id,
+                game_running: this.game_running,
+            }),
+        );
     }
 
     loadMap(filename) {
