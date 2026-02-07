@@ -72,16 +72,31 @@ async function loadAllMaskSprites(
 
     // await all of them together
     const all_masks = await Promise.all(all_promises);
-    const back = await asset_deck.fetchImage(
-        `assets/${character}/masks/back.png`,
-    );
+    var getMaskBack;
+    if (tint_key) {
+        const back = await asset_deck.fetchImage(
+            `assets/${character}/masks/back.png`,
+            tint_key,
+        );
+        getMaskBack = async (i) => {
+            return back;
+        };
+    } else {
+        getMaskBack = async (i) => {
+            let tint_key = config.MASK_CONFIG[i][0];
+            return await asset_deck.fetchImage(
+                `assets/${character}/masks/back.png`,
+                tint_key,
+            );
+        };
+    }
 
     // split back up into their characters
     var masks = new Array();
     for (let i = 0; i <= config.MASK_COUNT; i += 1) {
         // get the masks and add in the back index in the right location
         let m = all_masks.slice(i * 3, i * 3 + 3);
-        m.splice(0, 0, back);
+        m.splice(0, 0, await getMaskBack(i));
         masks.push(m);
     }
     return masks;
